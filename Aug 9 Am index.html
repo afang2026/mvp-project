@@ -1,0 +1,1188 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Learning Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ivory:#f5efe4; --parchment:#efe6d4; --stone:#d9cfbe; --stone2:#c9beac;
+  --ink:#2a2620; --ink2:#4a4238; --muted:#7a7061;
+  --terracotta:#b2593f; --terracotta2:#8f4530; --olive:#7a8c4a; --sage:#a7b58a; --teal:#3f7d78;
+  --card:rgba(255,251,243,0.78); --card-solid:#fbf6ea; --line:rgba(60,45,30,0.12);
+  --shadow:0 10px 30px -18px rgba(60,40,20,0.35);
+}
+html[data-theme="dark"]{
+  --ivory:#1c1913; --parchment:#231e17; --stone:#2e281f; --stone2:#3a3327;
+  --ink:#efe6d4; --ink2:#d9cfbe; --muted:#a89e8a;
+  --terracotta:#c97456; --terracotta2:#a35a41; --olive:#9db06a; --sage:#8ea36b; --teal:#5aa8a1;
+  --card:rgba(35,30,23,0.78); --card-solid:#26211a; --line:rgba(230,215,190,0.10);
+  --shadow:0 10px 30px -18px rgba(0,0,0,0.6);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; font-family:'Inter',system-ui,sans-serif; color:var(--ink);
+  background:
+    radial-gradient(1200px 800px at 15% 10%, rgba(178,89,63,0.06), transparent 60%),
+    radial-gradient(1000px 700px at 90% 95%, rgba(122,140,74,0.06), transparent 60%),
+    var(--ivory);
+  min-height:100vh;
+}
+h1,h2,h3{font-family:'Cormorant Garamond',serif; font-weight:600; letter-spacing:0.01em; margin:0}
+h1{font-size:2rem} h2{font-size:1.4rem} h3{font-size:1.15rem}
+.eyebrow{font-size:0.68rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--terracotta); font-weight:600; margin-bottom:6px}
+.shell{max-width:1180px; margin:0 auto; padding:28px 32px 80px; position:relative; z-index:2}
+.top{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:8px}
+.top .brand{display:flex; flex-direction:column}
+.top .brand small{color:var(--muted); letter-spacing:0.14em; text-transform:uppercase; font-size:0.68rem}
+.clock{display:flex; align-items:center; gap:10px; font-family:'Cormorant Garamond',serif}
+.clock .time{font-size:1.6rem; color:var(--ink)}
+.clock .date{color:var(--muted); font-size:0.85rem; font-family:'Inter',sans-serif}
+.clock button{background:transparent; border:1px solid var(--line); color:var(--muted); border-radius:999px; padding:4px 10px; cursor:pointer; font-size:0.75rem}
+.clock button:hover{color:var(--ink); border-color:var(--terracotta)}
+.themepill{border:1px solid var(--line); background:var(--card); border-radius:999px; padding:6px 12px; cursor:pointer; font-size:0.8rem; color:var(--ink)}
+.tabs{display:flex; gap:4px; margin:14px 0 22px; border-bottom:1px solid var(--line); flex-wrap:wrap}
+.tab{background:transparent; border:0; padding:10px 16px; cursor:pointer; color:var(--muted); font-size:0.9rem; border-bottom:2px solid transparent; font-family:inherit}
+.tab.active{color:var(--terracotta); border-bottom-color:var(--terracotta)}
+.tab:hover{color:var(--ink)}
+.grid{display:grid; gap:20px}
+.grid.cols-2{grid-template-columns:1fr 1fr}
+@media (max-width:820px){ .grid.cols-2{grid-template-columns:1fr} }
+.card{background:var(--card); backdrop-filter:blur(6px); border:1px solid var(--line); border-radius:14px; padding:22px 24px; box-shadow:var(--shadow); overflow:visible}
+.card.hero{background:var(--card-solid); padding:26px 28px}
+.card .head{display:flex; justify-content:space-between; align-items:baseline; gap:12px; cursor:pointer}
+.card .chev{color:var(--muted); font-size:0.9rem; transition:transform .2s}
+.card.collapsed .body{display:none}
+.card.collapsed .chev{transform:rotate(-90deg)}
+.row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.bot{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--line); border-radius:999px; background:transparent; cursor:pointer; font-size:0.85rem; color:var(--ink); font-family:inherit}
+.bot .dot{width:8px; height:8px; border-radius:50%; background:var(--stone2)}
+.bot.on{background:rgba(122,140,74,0.14); border-color:var(--olive)}
+.bot.on .dot{background:var(--olive)}
+.streaks{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; padding-top:14px; border-top:1px dashed var(--line)}
+.streak{display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; font-size:0.75rem; color:var(--muted)}
+.streak .num{font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--terracotta); line-height:1}
+.streak.dim{opacity:0.5}
+textarea, input[type="text"], input[type="datetime-local"], select{
+  width:100%; background:var(--card-solid); border:1px solid var(--line); border-radius:8px;
+  padding:10px 12px; color:var(--ink); font-family:inherit; font-size:0.9rem; position:relative;
+}
+textarea{min-height:110px; resize:vertical; font-family:'Inter',sans-serif}
+select{position:relative; z-index:5}
+select:focus, input:focus, textarea:focus{outline:2px solid var(--terracotta); outline-offset:1px; z-index:10}
+.btn{background:var(--terracotta); color:#fff; border:0; padding:9px 16px; border-radius:8px; cursor:pointer; font-size:0.85rem; font-family:inherit}
+.btn:hover{background:var(--terracotta2)}
+.btn.ghost{background:transparent; color:var(--ink); border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--terracotta); color:var(--terracotta)}
+.btn.danger{background:transparent; color:var(--terracotta); border:1px solid var(--terracotta)}
+.btn.sm{padding:5px 10px; font-size:0.75rem}
+.tag{display:inline-block; padding:2px 8px; border-radius:6px; font-size:0.7rem; background:rgba(63,125,120,0.14); color:var(--teal); margin-right:4px}
+.tag.effort{background:rgba(178,89,63,0.14); color:var(--terracotta)}
+.status{color:var(--muted); font-size:0.8rem; margin-top:8px}
+.ritual{display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border:1px solid var(--line); border-radius:8px; cursor:pointer; margin-bottom:8px}
+.ritual.done{background:rgba(122,140,74,0.10); border-color:var(--olive)}
+.ritual .meta{font-size:0.72rem; color:var(--muted)}
+.task{display:flex; gap:8px; align-items:center; padding:8px 0; border-bottom:1px dashed var(--line)}
+.task:last-child{border-bottom:0}
+.task .txt{flex:1; font-size:0.88rem}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden}
+.seg button{background:transparent; border:0; padding:6px 12px; cursor:pointer; color:var(--muted); font-family:inherit; font-size:0.8rem}
+.seg button.active{background:var(--terracotta); color:#fff}
+.wkgrid{display:grid; grid-template-columns:repeat(7,1fr); gap:10px}
+@media(max-width:820px){ .wkgrid{grid-template-columns:repeat(2,1fr)} }
+.day{border:1px solid var(--line); border-radius:10px; padding:10px; min-height:120px; background:var(--card)}
+.day.today{border-color:var(--terracotta); border-width:2px}
+.day h4{margin:0 0 8px; font-size:0.85rem; font-family:'Cormorant Garamond',serif; color:var(--ink)}
+.day h4 span{color:var(--muted); font-size:0.72rem; font-family:'Inter',sans-serif; margin-left:4px}
+.chip{display:inline-block; font-size:0.7rem; padding:2px 6px; margin:2px 3px 2px 0; border-radius:5px; background:rgba(122,140,74,0.14); color:var(--olive); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.chip.snap{background:rgba(63,125,120,0.14); color:var(--teal)}
+.chip.rit{background:rgba(178,89,63,0.14); color:var(--terracotta)}
+.snap-card{border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:10px; background:var(--card-solid)}
+.snap-card .sh{display:flex; justify-content:space-between; gap:10px; cursor:pointer; align-items:baseline}
+.snap-card .sh strong{font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:500}
+.snap-card .meta{font-size:0.72rem; color:var(--muted)}
+.snap-card .body{display:none; margin-top:10px; padding-top:10px; border-top:1px dashed var(--line)}
+.snap-card.open .body{display:block}
+.snap-card pre{white-space:pre-wrap; font-family:inherit; font-size:0.85rem; margin:0; color:var(--ink2)}
+.reply{border-left:2px solid var(--sage); padding:8px 12px; margin:8px 0 8px 8px; background:rgba(122,140,74,0.06); border-radius:0 8px 8px 0}
+.reply .rmeta{font-size:0.7rem; color:var(--muted); margin-bottom:4px}
+.kanban{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px}
+.kcol{background:var(--parchment); border:1px solid var(--line); border-radius:10px; padding:12px; min-height:120px}
+.kcol h4{margin:0 0 10px; font-family:'Cormorant Garamond',serif; font-size:1rem; color:var(--terracotta); padding-bottom:6px; border-bottom:1px solid var(--line)}
+.kcard{background:var(--card-solid); border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:8px; cursor:pointer; font-size:0.85rem}
+.kcard:hover{border-color:var(--terracotta)}
+.kcard .kfocus{font-family:'Cormorant Garamond',serif; font-size:1rem; margin-bottom:4px}
+.kcard .kmeta{font-size:0.7rem; color:var(--muted)}
+.modal{position:fixed; inset:0; background:rgba(30,25,18,0.5); display:none; align-items:center; justify-content:center; z-index:100; padding:20px}
+.modal.open{display:flex}
+.modal-inner{background:var(--card-solid); border:1px solid var(--line); border-radius:14px; padding:24px; max-width:640px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:var(--shadow); overflow-x:visible}
+.modal h3{margin-bottom:14px}
+.modal label{display:block; font-size:0.75rem; color:var(--muted); margin:12px 0 4px; text-transform:uppercase; letter-spacing:0.08em}
+.modal .actions{display:flex; gap:8px; justify-content:flex-end; margin-top:18px}
+.settings-row{display:flex; gap:8px; align-items:center; padding:8px 0; border-bottom:1px dashed var(--line)}
+.settings-row input[type="text"]{flex:1}
+.decor{position:fixed; pointer-events:none; z-index:0; opacity:0.55}
+html[data-theme="dark"] .decor{opacity:0.35}
+.decor.pillar-l{left:0; top:0; height:100vh; width:120px}
+.decor.pillar-r{right:0; bottom:0; height:100vh; width:120px; transform:scaleX(-1)}
+.decor.planter{left:20px; bottom:20px; width:110px}
+@media(max-width:900px){ .decor.pillar-r,.decor.planter{display:none} .decor.pillar-l{width:60px; opacity:0.35} }
+.hidden{display:none !important}
+</style>
+</head>
+<body>
+
+<svg class="decor pillar-l" viewBox="0 0 120 800" xmlns="http://www.w3.org/2000/svg">
+  <defs><linearGradient id="stone" x1="0" x2="1"><stop offset="0" stop-color="#d9cfbe"/><stop offset="1" stop-color="#b8ac97"/></linearGradient></defs>
+  <rect x="30" y="0" width="50" height="800" fill="url(#stone)"/>
+  <rect x="20" y="0" width="70" height="20" fill="#b8ac97"/>
+  <g stroke="#c9beac" stroke-width="1" fill="none">
+    <line x1="42" y1="20" x2="42" y2="800"/><line x1="52" y1="20" x2="52" y2="800"/>
+    <line x1="62" y1="20" x2="62" y2="800"/><line x1="72" y1="20" x2="72" y2="800"/>
+  </g>
+  <path d="M85 50 Q100 120, 88 190 Q75 260, 92 330 Q108 410, 88 490 Q72 570, 90 650 Q100 720, 85 790" stroke="#7a8c4a" stroke-width="1.5" fill="none"/>
+  <g fill="#7a8c4a" opacity="0.75">
+    <ellipse cx="95" cy="90" rx="6" ry="3" transform="rotate(30 95 90)"/>
+    <ellipse cx="82" cy="170" rx="6" ry="3" transform="rotate(-20 82 170)"/>
+    <ellipse cx="98" cy="260" rx="6" ry="3" transform="rotate(40 98 260)"/>
+    <ellipse cx="85" cy="360" rx="6" ry="3" transform="rotate(-15 85 360)"/>
+    <ellipse cx="100" cy="450" rx="6" ry="3" transform="rotate(25 100 450)"/>
+    <ellipse cx="82" cy="540" rx="6" ry="3" transform="rotate(-30 82 540)"/>
+    <ellipse cx="98" cy="630" rx="6" ry="3" transform="rotate(20 98 630)"/>
+    <ellipse cx="85" cy="720" rx="6" ry="3" transform="rotate(-25 85 720)"/>
+  </g>
+</svg>
+<svg class="decor pillar-r" viewBox="0 0 120 800" xmlns="http://www.w3.org/2000/svg">
+  <rect x="30" y="0" width="50" height="800" fill="#c9beac"/>
+  <path d="M85 50 Q100 120, 88 190 Q75 260, 92 330 Q108 410, 88 490 Q72 570, 90 650 Q100 720, 85 790" stroke="#7a8c4a" stroke-width="1.5" fill="none"/>
+  <g fill="#7a8c4a" opacity="0.7">
+    <ellipse cx="95" cy="90" rx="6" ry="3"/><ellipse cx="82" cy="200" rx="6" ry="3"/>
+    <ellipse cx="98" cy="300" rx="6" ry="3"/><ellipse cx="85" cy="420" rx="6" ry="3"/>
+    <ellipse cx="100" cy="530" rx="6" ry="3"/><ellipse cx="85" cy="640" rx="6" ry="3"/>
+  </g>
+</svg>
+<svg class="decor planter" viewBox="0 0 110 100" xmlns="http://www.w3.org/2000/svg">
+  <path d="M20 45 L90 45 L82 90 L28 90 Z" fill="#b2593f"/>
+  <ellipse cx="55" cy="45" rx="35" ry="6" fill="#8f4530"/>
+  <g fill="#7a8c4a">
+    <ellipse cx="40" cy="35" rx="10" ry="5" transform="rotate(-30 40 35)"/>
+    <ellipse cx="70" cy="30" rx="12" ry="5" transform="rotate(25 70 30)"/>
+    <ellipse cx="55" cy="20" rx="10" ry="5"/>
+  </g>
+</svg>
+
+<div class="shell">
+  <div class="top">
+    <div class="brand">
+      <small>AI Learning Command Center</small>
+      <h1>Home Base</h1>
+    </div>
+    <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap">
+      <div class="clock">
+        <div>
+          <div class="time" id="clockTime">—</div>
+          <div class="date" id="clockDate">—</div>
+        </div>
+        <button id="btnClockEdit" title="Edit timezone">⚙</button>
+      </div>
+      <button class="themepill" id="themeToggle">◐ Theme</button>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-tab="today">Today</button>
+    <button class="tab" data-tab="week">This Week</button>
+    <button class="tab" data-tab="snaps">Snapshots</button>
+    <button class="tab" data-tab="archive">Archive</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </div>
+
+  <!-- TODAY -->
+  <section id="tab-today">
+    <div class="card hero" id="card-snap">
+      <div class="head" data-collapse="snap">
+        <div><div class="eyebrow">Context Snapshot</div><h2>Paste today's snapshot</h2></div>
+        <span class="chev">▾</span>
+      </div>
+      <div class="body">
+        <textarea id="snapText" placeholder="📎 CONTEXT SNAPSHOT&#10;Session focus: ...&#10;Key outputs: ...&#10;Open threads: ...&#10;Next step suggested: ..."></textarea>
+        <div class="row" style="margin-top:10px">
+          <select id="snapBot" style="max-width:320px"></select>
+          <button class="btn" id="btnSaveSnap">Save snapshot</button>
+          <span class="status" id="snapStatus"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid cols-2" style="margin-top:20px">
+      <div class="card" id="card-bots">
+        <div class="head" data-collapse="bots">
+          <div><div class="eyebrow">Daily Engagement</div><h2>Bots engaged today</h2></div>
+          <span class="chev">▾</span>
+        </div>
+        <div class="body">
+          <div class="row" id="botList"></div>
+          <div class="streaks" id="streakRow"></div>
+        </div>
+      </div>
+
+      <div class="card" id="card-rituals">
+        <div class="head" data-collapse="rituals">
+          <div><div class="eyebrow">Rituals</div><h2>Recurring to-do</h2></div>
+          <span class="chev">▾</span>
+        </div>
+        <div class="body">
+          <div id="ritualList"></div>
+          <div class="row" style="margin-top:10px">
+            <input type="text" id="ritTitle" placeholder="New ritual title" style="flex:1; min-width:160px"/>
+            <select id="ritFreq" style="max-width:120px"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="once">One-off</option></select>
+            <select id="ritBot" style="max-width:220px"></select>
+            <button class="btn sm" id="btnAddRit">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px" id="card-tasks">
+      <div class="head" data-collapse="tasks">
+        <div><div class="eyebrow">Follow-ups</div><h2>Open tasks</h2></div>
+        <span class="chev">▾</span>
+      </div>
+      <div class="body">
+        <div id="taskList"></div>
+        <div class="row" style="margin-top:10px">
+          <input type="text" id="taskText" placeholder="+ Add follow-up task" style="flex:1; min-width:180px"/>
+          <select id="taskDomain" style="max-width:150px"></select>
+          <select id="taskEffort" style="max-width:120px"></select>
+          <button class="btn sm" id="btnAddTask">Add</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WEEK -->
+  <section id="tab-week" class="hidden">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div><div class="eyebrow">This Week</div><h2 id="weekTitle">—</h2></div>
+        <div class="row">
+          <button class="btn ghost sm" id="wkPrev">← Prev</button>
+          <button class="btn ghost sm" id="wkToday">Today</button>
+          <button class="btn ghost sm" id="wkNext">Next →</button>
+        </div>
+      </div>
+      <div class="wkgrid" id="wkGrid" style="margin-top:16px"></div>
+    </div>
+    <div class="card" style="margin-top:20px">
+      <div class="eyebrow">Export</div><h2>Weekly summary</h2>
+      <textarea id="weekExport" style="margin-top:10px; min-height:220px" readonly></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="btnBuildExport">Generate</button>
+        <button class="btn ghost" id="btnCopyExport">Copy</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SNAPSHOTS -->
+  <section id="tab-snaps" class="hidden">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div><div class="eyebrow">Log</div><h2>All snapshots</h2></div>
+        <div class="row">
+          <input type="text" id="snapSearch" placeholder="Search…" style="max-width:200px"/>
+          <div class="seg" id="snapSort">
+            <button class="active" data-sort="activity">By activity</button>
+            <button data-sort="created">By created</button>
+            <button data-sort="bot">By bot</button>
+          </div>
+          <div class="seg" id="snapView">
+            <button class="active" data-view="list">List</button>
+            <button data-view="kanban">Kanban</button>
+          </div>
+        </div>
+      </div>
+      <div id="snapContainer" style="margin-top:16px"></div>
+    </div>
+  </section>
+
+  <!-- ARCHIVE -->
+  <section id="tab-archive" class="hidden">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div><div class="eyebrow">Archive</div><h2>Archived snapshots</h2></div>
+        <div class="row">
+          <input type="text" id="archSearch" placeholder="Search…" style="max-width:200px"/>
+          <div class="seg" id="archSort">
+            <button class="active" data-sort="activity">By activity</button>
+            <button data-sort="created">By created</button>
+            <button data-sort="bot">By bot</button>
+          </div>
+          <div class="seg" id="archView">
+            <button class="active" data-view="list">List</button>
+            <button data-view="kanban">Kanban</button>
+          </div>
+        </div>
+      </div>
+      <div id="archContainer" style="margin-top:16px"></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="tab-settings" class="hidden">
+    <div class="grid cols-2">
+      <div class="card">
+        <div class="eyebrow">Bots</div><h2>Roster</h2>
+        <div id="setBots" style="margin-top:12px"></div>
+        <div class="row" style="margin-top:10px">
+          <input type="text" id="newBotName" placeholder="+ New bot name" style="flex:1"/>
+          <button class="btn sm" id="btnAddBot">Add</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="eyebrow">Tags</div><h2>Domains &amp; efforts</h2>
+        <h3 style="margin-top:12px; font-size:0.95rem">Domains</h3>
+        <div id="setDomains"></div>
+        <div class="row" style="margin-top:6px"><input type="text" id="newDomain" placeholder="+ Domain" style="flex:1"/><button class="btn sm" id="btnAddDomain">Add</button></div>
+        <h3 style="margin-top:16px; font-size:0.95rem">Efforts</h3>
+        <div id="setEfforts"></div>
+        <div class="row" style="margin-top:6px"><input type="text" id="newEffort" placeholder="+ Effort" style="flex:1"/><button class="btn sm" id="btnAddEffort">Add</button></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:20px">
+      <div class="eyebrow">General</div><h2>Preferences</h2>
+      <div class="settings-row"><label style="min-width:180px">Week starts on</label>
+        <select id="setWeekStart" style="max-width:180px"><option value="1">Monday</option><option value="0">Sunday</option></select>
+      </div>
+      <div class="settings-row"><label style="min-width:180px">Time zone</label>
+        <select id="setTz" style="max-width:320px"></select>
+      </div>
+    </div>
+    <div class="card" style="margin-top:20px">
+      <div class="eyebrow">Data</div><h2>Import / Export</h2>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="btnExport">Export JSON</button>
+        <button class="btn ghost" id="btnImport">Import JSON</button>
+        <input type="file" id="fileImport" accept="application/json" class="hidden"/>
+        <button class="btn danger" id="btnClear">Clear all data</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Ritual snapshot modal -->
+<div class="modal" id="ritModal">
+  <div class="modal-inner">
+    <h3 id="ritModalTitle">Complete ritual</h3>
+    <label>Bot</label><select id="ritSnapBot"></select>
+    <label>Snapshot</label><textarea id="ritSnapText" placeholder="Paste 📎 CONTEXT SNAPSHOT here"></textarea>
+    <div class="actions">
+      <button class="btn ghost" data-close-modal="ritModal">Cancel</button>
+      <button class="btn" id="btnRitSave">Save &amp; complete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Snapshot editor -->
+<div class="modal" id="snapEditor">
+  <div class="modal-inner">
+    <h3>Edit snapshot</h3>
+    <label>Bot</label><select id="edBot"></select>
+    <label>Created at</label><input type="datetime-local" id="edCreated"/>
+    <label>Session focus</label><input type="text" id="edFocus"/>
+    <label>Raw content</label><textarea id="edRaw"></textarea>
+    <label>Thread</label>
+    <div id="edReplies"></div>
+    <div style="border:1px dashed var(--line); border-radius:8px; padding:10px; margin-top:10px">
+      <label style="margin-top:0">Add reply</label>
+      <select id="edNewReplyBot" style="margin-bottom:6px"></select>
+      <textarea id="edNewReplyText" placeholder="Follow-up text…"></textarea>
+      <button class="btn sm" id="btnAddReply" style="margin-top:6px">Add reply</button>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" data-close-modal="snapEditor">Cancel</button>
+      <button class="btn danger" id="btnArchiveSnap">Archive</button>
+      <button class="btn danger" id="btnDeleteSnap">Delete</button>
+      <button class="btn" id="btnSaveEd">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Timezone modal -->
+<div class="modal" id="tzModal">
+  <div class="modal-inner" style="max-width:420px">
+    <h3>Clock &amp; time zone</h3>
+    <label>Time zone</label><select id="tzPicker"></select>
+    <p style="font-size:0.8rem; color:var(--muted); margin-top:10px">Default is your computer's local zone. All timestamps (including snapshot Created at) use this zone.</p>
+    <div class="actions">
+      <button class="btn ghost" data-close-modal="tzModal">Cancel</button>
+      <button class="btn ghost" id="btnTzReset">Use system</button>
+      <button class="btn" id="btnTzSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm -->
+<div class="modal" id="confirmModal">
+  <div class="modal-inner" style="max-width:420px">
+    <h3 id="confirmTitle">Are you sure?</h3>
+    <p id="confirmMsg" style="color:var(--muted); font-size:0.9rem"></p>
+    <div class="actions">
+      <button class="btn ghost" data-close-modal="confirmModal">Cancel</button>
+      <button class="btn" id="btnConfirmYes">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   Storage helpers
+========================================================= */
+const K = { bots:'alcc.bots', settings:'alcc.settings', eng:'alcc.engagements',
+  tasks:'alcc.tasks', snaps:'alcc.snapshots', rits:'alcc.rituals', ritLog:'alcc.ritualLog', ui:'alcc.ui' };
+const load = (k, d) => { try{ const v=localStorage.getItem(k); return v===null?d:JSON.parse(v);}catch(e){return d;} };
+const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+const $ = id => document.getElementById(id);
+const uid = () => Math.random().toString(36).slice(2,10);
+
+/* =========================================================
+   Seeds
+========================================================= */
+const DEFAULT_BOTS = [
+  'PHX-COR-🧮Math-Op47','PHX-COR-💼IBCoach-Son46','PHX-COR-📰News-Son46',
+  'PHX-COR-🏔️Pursuit-Op47','PHX-COR-🪞Reflect-Son46','PHX-MET-📎Snapshot-Gpt54',
+  'PHX-MET-🛠️BotBuilder-Op47','PHX-TAS-💻Code-Op47','PHX-TAS-🤝Etiquette-Op47',
+  'PHX-TAS-📚ReadSynth-Op47','PHX-TAS-🀄ZhStyle-Op47','POE-TEA-🎭Debate-Son46',
+  'POE-TAS-🔍NewsFetch-PplxPro'
+];
+if(load(K.bots,null)===null) save(K.bots, DEFAULT_BOTS.map(n=>({name:n, daily:true, archived:false})));
+if(load(K.settings,null)===null) save(K.settings, {
+  theme:'light', weekStart:1, tz:null,
+  domains:['Learning','Career','Reflection','Language','Other'],
+  efforts:['Quick','Medium','Deep']
+});
+if(load(K.eng,null)===null) save(K.eng, {});
+if(load(K.tasks,null)===null) save(K.tasks, []);
+if(load(K.snaps,null)===null) save(K.snaps, []);
+if(load(K.rits,null)===null) save(K.rits, [{id:uid(), title:'News platform analysis', frequency:'daily', bot:'PHX-COR-📰News-Son46'}]);
+if(load(K.ritLog,null)===null) save(K.ritLog, {});
+if(load(K.ui,null)===null) save(K.ui, {lastTab:'today', collapsed:{}});
+
+/* =========================================================
+   TIME / TIMEZONE
+========================================================= */
+function currentTz(){
+  const s = load(K.settings,{});
+  return s.tz || Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+// return YYYY-MM-DD for a given Date in the configured tz
+function isoDate(d){
+  d = d || new Date();
+  const tz = currentTz();
+  // en-CA yields YYYY-MM-DD reliably
+  return new Intl.DateTimeFormat('en-CA',{timeZone:tz, year:'numeric', month:'2-digit', day:'2-digit'}).format(d);
+}
+function fmtTime(d){
+  return new Intl.DateTimeFormat('en-GB',{timeZone:currentTz(), hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false}).format(d||new Date());
+}
+function fmtDateLong(d){
+  return new Intl.DateTimeFormat(undefined,{timeZone:currentTz(), weekday:'long', month:'long', day:'numeric', year:'numeric'}).format(d||new Date());
+}
+function nowIso(){ // ISO string but representing the tz-adjusted moment
+  return new Date().toISOString();
+}
+// Convert ISO stored value -> value for datetime-local input in current tz
+function isoToLocalInput(iso){
+  const d = new Date(iso);
+  const tz = currentTz();
+  const parts = new Intl.DateTimeFormat('en-CA',{timeZone:tz, year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false}).formatToParts(d);
+  const g = t => parts.find(p=>p.type===t).value;
+  return `${g('year')}-${g('month')}-${g('day')}T${g('hour')}:${g('minute')}`;
+}
+// datetime-local input string -> ISO (interpreting the input as local-to-current-tz)
+function localInputToIso(s){
+  if(!s) return nowIso();
+  // Build a UTC-equivalent by computing offset of that wall-clock time in current tz
+  const tz = currentTz();
+  const [date,time] = s.split('T'); const [y,mo,d]=date.split('-').map(Number); const [h,mi]=time.split(':').map(Number);
+  // Guess with local Date, then correct for tz offset difference
+  const asUTC = Date.UTC(y,mo-1,d,h,mi);
+  // Find what wall-clock time asUTC represents in tz
+  const wall = new Intl.DateTimeFormat('en-CA',{timeZone:tz, year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date(asUTC));
+  const g = t => Number(wall.find(p=>p.type===t).value);
+  const wallUTC = Date.UTC(g('year'), g('month')-1, g('day'), g('hour'), g('minute'));
+  const offset = asUTC - wallUTC;
+  return new Date(asUTC + offset).toISOString();
+}
+function commonTzList(){
+  // A curated list plus system
+  const sys = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const list = ['UTC','America/New_York','America/Chicago','America/Denver','America/Los_Angeles',
+    'America/Toronto','America/Vancouver','America/Mexico_City','America/Sao_Paulo',
+    'Europe/London','Europe/Paris','Europe/Berlin','Europe/Moscow',
+    'Africa/Cairo','Africa/Johannesburg',
+    'Asia/Dubai','Asia/Kolkata','Asia/Bangkok','Asia/Singapore','Asia/Shanghai','Asia/Hong_Kong','Asia/Tokyo','Asia/Seoul',
+    'Australia/Sydney','Pacific/Auckland'];
+  if(!list.includes(sys)) list.unshift(sys);
+  return list;
+}
+
+/* =========================================================
+   Utility: bots
+========================================================= */
+function activeBots(){ return load(K.bots,[]).filter(b=>!b.archived); }
+function fillBotSelect(sel, includeBlank=true, value=''){
+  const bots = activeBots();
+  sel.innerHTML = '';
+  if(includeBlank){ const o=document.createElement('option'); o.value=''; o.textContent='— no bot —'; sel.appendChild(o); }
+  bots.forEach(b=>{ const o=document.createElement('option'); o.value=b.name; o.textContent=b.name; sel.appendChild(o); });
+  sel.value = value || '';
+}
+
+/* =========================================================
+   Snapshot parser
+========================================================= */
+function parseSnapshot(text){
+  const t = text.trim();
+  const grab = (label) => {
+    const re = new RegExp(label + '\\s*:\\s*([\\s\\S]*?)(?=\\n(?:Session focus|Key outputs|Open threads|Next step suggested|Suggested next step)\\s*:|$)','i');
+    const m = t.match(re); return m ? m[1].trim() : '';
+  };
+  const hasHeader = /📎\s*CONTEXT SNAPSHOT/i.test(t);
+  const focus = grab('Session focus');
+  const outputs = grab('Key outputs');
+  if(!hasHeader && !focus && !outputs) return null;
+  return {
+    focus: focus || '',
+    outputs, threads: grab('Open threads'),
+    next: grab('Next step suggested') || grab('Suggested next step')
+  };
+}
+
+/* =========================================================
+   Confirm modal
+========================================================= */
+let confirmCb=null;
+function confirmAction(title, msg, cb){
+  $('confirmTitle').textContent = title;
+  $('confirmMsg').textContent = msg||'';
+  confirmCb = cb;
+  $('confirmModal').classList.add('open');
+}
+$('btnConfirmYes').addEventListener('click', ()=>{
+  const cb = confirmCb; confirmCb=null; $('confirmModal').classList.remove('open');
+  if(cb) cb();
+});
+
+/* Generic close-modal buttons */
+document.addEventListener('click', e=>{
+  const c = e.target.closest('[data-close-modal]');
+  if(c){ document.getElementById(c.dataset.closeModal).classList.remove('open'); }
+});
+
+/* =========================================================
+   TABS
+========================================================= */
+function showTab(t){
+  document.querySelectorAll('#tabs .tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===t));
+  ['today','week','snaps','archive','settings'].forEach(x=>{
+    $('tab-'+x).classList.toggle('hidden', x!==t);
+  });
+  const ui = load(K.ui,{}); ui.lastTab = t; save(K.ui, ui);
+  if(t==='week') renderWeek();
+  if(t==='snaps') renderSnapPage('active');
+  if(t==='archive') renderSnapPage('archive');
+  if(t==='settings') renderSettings();
+}
+document.getElementById('tabs').addEventListener('click', e=>{
+  const b = e.target.closest('.tab'); if(b) showTab(b.dataset.tab);
+});
+
+/* =========================================================
+   COLLAPSE
+========================================================= */
+document.addEventListener('click', e=>{
+  const h = e.target.closest('.head[data-collapse]');
+  if(!h) return;
+  const card = h.closest('.card'); const key = h.dataset.collapse;
+  card.classList.toggle('collapsed');
+  const ui = load(K.ui,{}); ui.collapsed = ui.collapsed||{}; ui.collapsed[key] = card.classList.contains('collapsed');
+  save(K.ui, ui);
+});
+function applyCollapsed(){
+  const ui = load(K.ui,{collapsed:{}});
+  Object.entries(ui.collapsed||{}).forEach(([k,v])=>{
+    const h = document.querySelector(`.head[data-collapse="${k}"]`); if(h && v) h.closest('.card').classList.add('collapsed');
+  });
+}
+
+/* =========================================================
+   CLOCK
+========================================================= */
+function tickClock(){
+  $('clockTime').textContent = fmtTime();
+  $('clockDate').textContent = fmtDateLong() + ' · ' + currentTz();
+}
+setInterval(tickClock, 1000);
+
+$('btnClockEdit').addEventListener('click', ()=>{
+  const sel = $('tzPicker');
+  sel.innerHTML='';
+  commonTzList().forEach(z=>{ const o=document.createElement('option'); o.value=z; o.textContent=z; sel.appendChild(o); });
+  sel.value = currentTz();
+  $('tzModal').classList.add('open');
+});
+$('btnTzSave').addEventListener('click', ()=>{
+  const s = load(K.settings,{}); s.tz = $('tzPicker').value; save(K.settings, s);
+  $('tzModal').classList.remove('open'); tickClock();
+});
+$('btnTzReset').addEventListener('click', ()=>{
+  const s = load(K.settings,{}); s.tz = null; save(K.settings, s);
+  $('tzModal').classList.remove('open'); tickClock();
+});
+
+/* =========================================================
+   TODAY: bots checklist + streaks
+========================================================= */
+function renderBots(){
+  const list = $('botList'); list.innerHTML='';
+  const eng = load(K.eng,{}); const today = isoDate(); const todays = eng[today]||[];
+  activeBots().forEach(b=>{
+    const btn = document.createElement('button');
+    btn.className = 'bot' + (todays.includes(b.name)?' on':'');
+    btn.dataset.bot = b.name;
+    btn.innerHTML = `<span class="dot"></span><span>${b.name}</span>`;
+    list.appendChild(btn);
+  });
+  renderStreaks();
+}
+document.addEventListener('click', e=>{
+  const b = e.target.closest('.bot[data-bot]');
+  if(!b) return;
+  const name = b.dataset.bot;
+  const eng = load(K.eng,{}); const today = isoDate();
+  eng[today] = eng[today]||[];
+  const i = eng[today].indexOf(name);
+  if(i<0) eng[today].push(name); else eng[today].splice(i,1);
+  save(K.eng, eng); renderBots();
+});
+function shiftDate(iso, days){
+  // Move a YYYY-MM-DD by ±N days safely (naive is fine since it's date-only)
+  const [y,m,d] = iso.split('-').map(Number);
+  const dt = new Date(Date.UTC(y,m-1,d)); dt.setUTCDate(dt.getUTCDate()+days);
+  return dt.toISOString().slice(0,10);
+}
+function streakFor(botName){
+  const eng = load(K.eng,{}); const today = isoDate();
+  let cur = today; let count = 0;
+  // grace: if today not engaged, start from yesterday
+  if(!(eng[today]||[]).includes(botName)) cur = shiftDate(today,-1);
+  while((eng[cur]||[]).includes(botName)){ count++; cur = shiftDate(cur,-1); }
+  return count;
+}
+function renderStreaks(){
+  const row = $('streakRow'); row.innerHTML='';
+  activeBots().filter(b=>b.daily).forEach(b=>{
+    const n = streakFor(b.name);
+    const short = b.name.split('-').slice(-1)[0];
+    const s = document.createElement('div');
+    s.className = 'streak' + (n===0?' dim':'');
+    s.title = b.name;
+    s.innerHTML = `<span class="num">${n}</span><span>${short}</span>`;
+    row.appendChild(s);
+  });
+}
+
+/* =========================================================
+   TODAY: rituals
+========================================================= */
+function renderRituals(){
+  const list = $('ritualList'); list.innerHTML='';
+  const rits = load(K.rits,[]); const log = load(K.ritLog,{}); const today = isoDate();
+  const done = log[today]||[];
+  rits.forEach(r=>{
+    const el = document.createElement('div');
+    el.className = 'ritual' + (done.includes(r.id)?' done':'');
+    el.dataset.rit = r.id;
+    el.innerHTML = `<div><strong>${r.title}</strong><div class="meta">${r.frequency}${r.bot?' · '+r.bot:''}</div></div>
+                    <div class="meta">${done.includes(r.id)?'✓ done':'tap to log'}</div>`;
+    list.appendChild(el);
+  });
+  fillBotSelect($('ritBot'), true);
+}
+document.addEventListener('click', e=>{
+  const r = e.target.closest('.ritual[data-rit]');
+  if(!r) return;
+  openRitualModal(r.dataset.rit);
+});
+let activeRitual = null;
+function openRitualModal(id){
+  const r = load(K.rits,[]).find(x=>x.id===id); if(!r) return;
+  activeRitual = r;
+  $('ritModalTitle').textContent = r.title;
+  fillBotSelect($('ritSnapBot'), true, r.bot||'');
+  $('ritSnapText').value='';
+  $('ritModal').classList.add('open');
+}
+$('btnRitSave').addEventListener('click', ()=>{
+  if(!activeRitual) return;
+  const text = $('ritSnapText').value.trim();
+  const botName = $('ritSnapBot').value || '';
+  if(text){
+    const parsed = parseSnapshot(text);
+    const snaps = load(K.snaps,[]);
+    const now = nowIso();
+    snaps.unshift({id:uid(), bot:botName, raw:text, focus:parsed?parsed.focus:'', createdAt:now, updatedAt:now, replies:[], archived:false});
+    save(K.snaps, snaps);
+  }
+  if(botName){
+    const eng = load(K.eng,{}); const t = isoDate(); eng[t]=eng[t]||[];
+    if(!eng[t].includes(botName)) eng[t].push(botName);
+    save(K.eng, eng);
+  }
+  const log = load(K.ritLog,{}); const t = isoDate(); log[t] = log[t]||[];
+  if(!log[t].includes(activeRitual.id)) log[t].push(activeRitual.id);
+  save(K.ritLog, log);
+  $('ritModal').classList.remove('open');
+  renderBots(); renderRituals();
+});
+$('btnAddRit').addEventListener('click', ()=>{
+  const title = $('ritTitle').value.trim(); if(!title) return;
+  const rits = load(K.rits,[]);
+  rits.push({id:uid(), title, frequency:$('ritFreq').value, bot:$('ritBot').value||''});
+  save(K.rits, rits); $('ritTitle').value=''; renderRituals();
+});
+
+/* =========================================================
+   TODAY: snapshot paste
+========================================================= */
+$('btnSaveSnap').addEventListener('click', ()=>{
+  const text = $('snapText').value.trim(); if(!text){ $('snapStatus').textContent='Nothing to save.'; return; }
+  const bot = $('snapBot').value || '';
+  const parsed = parseSnapshot(text); const now = nowIso();
+  const snaps = load(K.snaps,[]);
+  snaps.unshift({id:uid(), bot, raw:text, focus:parsed?parsed.focus:'', createdAt:now, updatedAt:now, replies:[], archived:false});
+  save(K.snaps, snaps);
+  $('snapText').value=''; $('snapStatus').textContent = parsed?'✅ Parsed snapshot saved.':'📝 Saved as raw note.';
+  if(bot){
+    const eng = load(K.eng,{}); const t=isoDate(); eng[t]=eng[t]||[];
+    if(!eng[t].includes(bot)) eng[t].push(bot); save(K.eng, eng); renderBots();
+  }
+});
+
+/* =========================================================
+   TODAY: tasks
+========================================================= */
+function renderTasks(){
+  const list = $('taskList'); list.innerHTML='';
+  const tasks = load(K.tasks,[]).filter(t=>t.status==='open');
+  if(tasks.length===0){ list.innerHTML = '<div class="status">No open tasks. A quiet garden.</div>'; return; }
+  tasks.forEach(t=>{
+    const el = document.createElement('div'); el.className='task';
+    el.innerHTML = `<span class="txt">${t.text}</span>
+      ${t.domain?`<span class="tag">${t.domain}</span>`:''}${t.effort?`<span class="tag effort">${t.effort}</span>`:''}
+      <button class="btn sm ghost" data-task-done="${t.id}">Done</button>`;
+    list.appendChild(el);
+  });
+  const s = load(K.settings,{});
+  fillSelectFromList($('taskDomain'), s.domains); fillSelectFromList($('taskEffort'), s.efforts);
+}
+function fillSelectFromList(sel, arr){
+  sel.innerHTML=''; (arr||[]).forEach(x=>{ const o=document.createElement('option'); o.value=x; o.textContent=x; sel.appendChild(o); });
+}
+$('btnAddTask').addEventListener('click', ()=>{
+  const text = $('taskText').value.trim(); if(!text) return;
+  const tasks = load(K.tasks,[]);
+  tasks.push({id:uid(), text, domain:$('taskDomain').value, effort:$('taskEffort').value, status:'open'});
+  save(K.tasks, tasks); $('taskText').value=''; renderTasks();
+});
+document.addEventListener('click', e=>{
+  const d = e.target.closest('[data-task-done]'); if(!d) return;
+  const tasks = load(K.tasks,[]); const t = tasks.find(x=>x.id===d.dataset.taskDone); if(t) t.status='done';
+  save(K.tasks, tasks); renderTasks();
+});
+
+/* =========================================================
+   WEEK
+========================================================= */
+let weekOffset = 0;
+function weekStartFor(dateIso){
+  const s = load(K.settings,{weekStart:1}); const ws = Number(s.weekStart);
+  const [y,m,d] = dateIso.split('-').map(Number);
+  const dt = new Date(Date.UTC(y,m-1,d));
+  const dow = dt.getUTCDay(); // 0..6, 0=Sun
+  const diff = (dow - ws + 7) % 7;
+  dt.setUTCDate(dt.getUTCDate() - diff);
+  return dt.toISOString().slice(0,10);
+}
+function renderWeek(){
+  const today = isoDate();
+  const start = shiftDate(weekStartFor(today), weekOffset*7);
+  const days = Array.from({length:7}, (_,i)=>shiftDate(start,i));
+  $('weekTitle').textContent = `${days[0]} → ${days[6]}`;
+  const grid = $('wkGrid'); grid.innerHTML='';
+  const eng = load(K.eng,{}); const snaps = load(K.snaps,[]); const rits = load(K.rits,[]); const ritLog = load(K.ritLog,{});
+  days.forEach(dt=>{
+    const cell = document.createElement('div'); cell.className='day'+(dt===today?' today':'');
+    const [y,m,d] = dt.split('-').map(Number);
+    const label = new Intl.DateTimeFormat(undefined,{timeZone:currentTz(), weekday:'short'}).format(new Date(Date.UTC(y,m-1,d)));
+    cell.innerHTML = `<h4>${label} <span>${m}/${d}</span></h4>`;
+    (eng[dt]||[]).forEach(b=>{
+      const short = b.split('-').slice(-1)[0];
+      const c = document.createElement('span'); c.className='chip'; c.title=b; c.textContent=short; cell.appendChild(c);
+    });
+    (ritLog[dt]||[]).forEach(rid=>{
+      const r = rits.find(x=>x.id===rid); if(!r) return;
+      const c = document.createElement('span'); c.className='chip rit'; c.title=r.title; c.textContent='◆ '+r.title.slice(0,14); cell.appendChild(c);
+    });
+    snaps.filter(s=>!s.archived && isoDate(new Date(s.createdAt))===dt).forEach(s=>{
+      const c = document.createElement('span'); c.className='chip snap'; c.title=s.focus||'(no focus)'; c.textContent='📎 '+((s.focus||'(no focus)').slice(0,18)); cell.appendChild(c);
+    });
+    grid.appendChild(cell);
+  });
+}
+$('wkPrev').addEventListener('click', ()=>{ weekOffset--; renderWeek(); });
+$('wkNext').addEventListener('click', ()=>{ weekOffset++; renderWeek(); });
+$('wkToday').addEventListener('click', ()=>{ weekOffset=0; renderWeek(); });
+$('btnBuildExport').addEventListener('click', ()=>{
+  const today = isoDate(); const start = shiftDate(weekStartFor(today), weekOffset*7);
+  const days = Array.from({length:7}, (_,i)=>shiftDate(start,i));
+  const eng = load(K.eng,{}); const snaps = load(K.snaps,[]); const tasks = load(K.tasks,[]);
+  let out = `# Weekly Summary ${days[0]} → ${days[6]}\n\n`;
+  days.forEach(dt=>{
+    out += `## ${dt}\nEngaged: ${(eng[dt]||[]).join(', ')||'—'}\n`;
+    const daySnaps = snaps.filter(s=>!s.archived && isoDate(new Date(s.createdAt))===dt);
+    if(daySnaps.length){ out += 'Snapshots:\n'; daySnaps.forEach(s=>{ out += ` - [${s.bot||'no bot'}] ${s.focus||'(no focus)'}\n`; }); }
+    out += '\n';
+  });
+  const open = tasks.filter(t=>t.status==='open');
+  if(open.length){ out += `## Open follow-ups\n`; open.forEach(t=>{ out += `- [${t.domain||'-'}/${t.effort||'-'}] ${t.text}\n`; }); }
+  $('weekExport').value = out;
+});
+$('btnCopyExport').addEventListener('click', ()=>{ $('weekExport').select(); document.execCommand('copy'); });
+
+/* =========================================================
+   SNAPSHOTS + ARCHIVE
+========================================================= */
+const pageState = {
+  active: {sort:'activity', view:'list', search:''},
+  archive:{sort:'activity', view:'list', search:''}
+};
+function bucketByActivity(iso){
+  const today = isoDate(); const y = shiftDate(today,-1);
+  const d = isoDate(new Date(iso));
+  if(d===today) return 'Today';
+  if(d===y) return 'Yesterday';
+  // this week?
+  const ws = weekStartFor(today);
+  if(d>=ws && d<today) return 'This week';
+  const lastWs = shiftDate(ws,-7);
+  if(d>=lastWs && d<ws) return 'Last week';
+  return d.slice(0,7); // YYYY-MM
+}
+function renderSnapPage(which){
+  const st = pageState[which];
+  const container = $(which==='active'?'snapContainer':'archContainer');
+  const all = load(K.snaps,[]).filter(s=> which==='archive' ? s.archived : !s.archived);
+  const q = (st.search||'').toLowerCase();
+  const filtered = all.filter(s=>{
+    if(!q) return true;
+    const hay = (s.bot||'')+' '+(s.focus||'')+' '+(s.raw||'')+' '+(s.replies||[]).map(r=>r.text).join(' ');
+    return hay.toLowerCase().includes(q);
+  });
+  // sort
+  const sorters = {
+    activity:(a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt),
+    created:(a,b)=>new Date(b.createdAt)-new Date(a.createdAt),
+    bot:(a,b)=>(a.bot||'~').localeCompare(b.bot||'~') || (new Date(b.updatedAt)-new Date(a.updatedAt))
+  };
+  filtered.sort(sorters[st.sort]);
+
+  container.innerHTML='';
+  if(st.view==='list'){
+    filtered.forEach(s=>{
+      const el = document.createElement('div'); el.className='snap-card';
+      const created = new Date(s.createdAt); const updated = new Date(s.updatedAt);
+      el.innerHTML = `
+        <div class="sh">
+          <div>
+            <strong>${s.focus||'(no focus parsed)'}</strong>
+            <div class="meta">${s.bot||'(no bot)'} · created ${fmtDateLong(created)} ${fmtTime(created)} · updated ${fmtTime(updated)} ${s.replies&&s.replies.length?'· '+s.replies.length+' reply':''}</div>
+          </div>
+          <button class="btn sm ghost" data-snap-edit="${s.id}">Edit</button>
+        </div>
+        <div class="body">
+          <pre>${escapeHtml(s.raw||'')}</pre>
+          ${(s.replies||[]).map(r=>`<div class="reply"><div class="rmeta">${r.bot||'(no bot)'} · ${fmtDateLong(new Date(r.at))} ${fmtTime(new Date(r.at))}</div>${escapeHtml(r.text)}</div>`).join('')}
+        </div>`;
+      el.querySelector('.sh').addEventListener('click', ev=>{
+        if(ev.target.closest('[data-snap-edit]')) return;
+        el.classList.toggle('open');
+      });
+      container.appendChild(el);
+    });
+    if(filtered.length===0) container.innerHTML='<div class="status">Nothing here.</div>';
+  } else {
+    // KANBAN — group by sort mode
+    const groups = {};
+    const order = [];
+    filtered.forEach(s=>{
+      let key;
+      if(st.sort==='bot') key = s.bot||'(no bot)';
+      else if(st.sort==='created') key = bucketByActivity(s.createdAt);
+      else key = bucketByActivity(s.updatedAt);
+      if(!(key in groups)){ groups[key]=[]; order.push(key); }
+      groups[key].push(s);
+    });
+    // Bucket ordering
+    if(st.sort!=='bot'){
+      const rank = k => ({'Today':0,'Yesterday':1,'This week':2,'Last week':3}[k] ?? 4);
+      order.sort((a,b)=>{
+        const ra=rank(a), rb=rank(b);
+        if(ra!==rb) return ra-rb;
+        return b.localeCompare(a);
+      });
+    }
+    const wrap = document.createElement('div'); wrap.className='kanban';
+    order.forEach(k=>{
+      const col = document.createElement('div'); col.className='kcol';
+      col.innerHTML = `<h4>${k} <span style="color:var(--muted); font-size:0.75rem">(${groups[k].length})</span></h4>`;
+      groups[k].forEach(s=>{
+        const c = document.createElement('div'); c.className='kcard'; c.dataset.snapEdit = s.id;
+        c.innerHTML = `<div class="kfocus">${s.focus||'(no focus)'}</div>
+          <div class="kmeta">${s.bot||'(no bot)'} · ${fmtDateLong(new Date(s.updatedAt))} ${s.replies&&s.replies.length?'· '+s.replies.length+'💬':''}</div>`;
+        col.appendChild(c);
+      });
+      wrap.appendChild(col);
+    });
+    container.appendChild(wrap);
+    if(order.length===0) container.innerHTML='<div class="status">Nothing here.</div>';
+  }
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// snapshot search/sort/view wiring
+$('snapSearch').addEventListener('input', e=>{ pageState.active.search = e.target.value; renderSnapPage('active'); });
+$('archSearch').addEventListener('input', e=>{ pageState.archive.search = e.target.value; renderSnapPage('archive'); });
+document.getElementById('snapSort').addEventListener('click', e=>{
+  const b=e.target.closest('button[data-sort]'); if(!b) return;
+  pageState.active.sort=b.dataset.sort;
+  $('snapSort').querySelectorAll('button').forEach(x=>x.classList.toggle('active', x===b));
+  renderSnapPage('active');
+});
+document.getElementById('snapView').addEventListener('click', e=>{
+  const b=e.target.closest('button[data-view]'); if(!b) return;
+  pageState.active.view=b.dataset.view;
+  $('snapView').querySelectorAll('button').forEach(x=>x.classList.toggle('active', x===b));
+  renderSnapPage('active');
+});
+document.getElementById('archSort').addEventListener('click', e=>{
+  const b=e.target.closest('button[data-sort]'); if(!b) return;
+  pageState.archive.sort=b.dataset.sort;
+  $('archSort').querySelectorAll('button').forEach(x=>x.classList.toggle('active', x===b));
+  renderSnapPage('archive');
+});
+document.getElementById('archView').addEventListener('click', e=>{
+  const b=e.target.closest('button[data-view]'); if(!b) return;
+  pageState.archive.view=b.dataset.view;
+  $('archView').querySelectorAll('button').forEach(x=>x.classList.toggle('active', x===b));
+  renderSnapPage('archive');
+});
+
+// snapshot editor open
+document.addEventListener('click', e=>{
+  const t = e.target.closest('[data-snap-edit]'); if(!t) return;
+  openSnapEditor(t.dataset.snapEdit);
+});
+let editingSnapId = null;
+function openSnapEditor(id){
+  const s = load(K.snaps,[]).find(x=>x.id===id); if(!s) return;
+  editingSnapId = id;
+  fillBotSelect($('edBot'), true, s.bot||'');
+  $('edCreated').value = isoToLocalInput(s.createdAt);
+  $('edFocus').value = s.focus||'';
+  $('edRaw').value = s.raw||'';
+  const rep = $('edReplies'); rep.innerHTML='';
+  (s.replies||[]).forEach((r,idx)=>{
+    const div = document.createElement('div'); div.className='reply';
+    div.innerHTML = `<div class="rmeta">${fmtDateLong(new Date(r.at))} ${fmtTime(new Date(r.at))}</div>`;
+    const botSel = document.createElement('select'); fillBotSelect(botSel, true, r.bot||''); div.appendChild(botSel);
+    const ta = document.createElement('textarea'); ta.value = r.text||''; ta.style.marginTop='6px'; div.appendChild(ta);
+    const row = document.createElement('div'); row.className='row'; row.style.marginTop='6px';
+    row.innerHTML = `<button class="btn sm" data-save-reply="${idx}">Save reply</button>
+                     <button class="btn sm danger" data-del-reply="${idx}">Delete</button>`;
+    div.appendChild(row);
+    div.querySelector('[data-save-reply]').addEventListener('click', ()=>{
+      confirmAction('Save reply?','This updates the thread and bumps last activity.', ()=>{
+        const snaps = load(K.snaps,[]); const sn = snaps.find(x=>x.id===editingSnapId);
+        sn.replies[idx].bot = botSel.value; sn.replies[idx].text = ta.value; sn.updatedAt = nowIso();
+        save(K.snaps, snaps); openSnapEditor(editingSnapId);
+      });
+    });
+    div.querySelector('[data-del-reply]').addEventListener('click', ()=>{
+      confirmAction('Delete this reply?','', ()=>{
+        const snaps = load(K.snaps,[]); const sn = snaps.find(x=>x.id===editingSnapId);
+        sn.replies.splice(idx,1); sn.updatedAt = nowIso();
+        save(K.snaps, snaps); openSnapEditor(editingSnapId);
+      });
+    });
+    rep.appendChild(div);
+  });
+  fillBotSelect($('edNewReplyBot'), true);
+  $('edNewReplyText').value='';
+  $('snapEditor').classList.add('open');
+}
+$('btnAddReply').addEventListener('click', ()=>{
+  const text = $('edNewReplyText').value.trim(); if(!text) return;
+  const snaps = load(K.snaps,[]); const sn = snaps.find(x=>x.id===editingSnapId);
+  sn.replies = sn.replies||[]; sn.replies.push({bot:$('edNewReplyBot').value||'', text, at:nowIso()});
+  sn.updatedAt = nowIso(); save(K.snaps, snaps); openSnapEditor(editingSnapId);
+});
+$('btnSaveEd').addEventListener('click', ()=>{
+  confirmAction('Save changes?','This updates the snapshot content and timestamps.', ()=>{
+    const snaps = load(K.snaps,[]); const sn = snaps.find(x=>x.id===editingSnapId);
+    sn.bot = $('edBot').value; sn.focus = $('edFocus').value; sn.raw = $('edRaw').value;
+    sn.createdAt = localInputToIso($('edCreated').value); sn.updatedAt = nowIso();
+    save(K.snaps, snaps); $('snapEditor').classList.remove('open');
+    renderSnapPage('active'); renderSnapPage('archive'); renderWeek();
+  });
+});
+$('btnArchiveSnap').addEventListener('click', ()=>{
+  confirmAction('Toggle archive?','Move this snapshot between active and archive.', ()=>{
+    const snaps = load(K.snaps,[]); const sn = snaps.find(x=>x.id===editingSnapId);
+    sn.archived = !sn.archived; sn.updatedAt = nowIso(); save(K.snaps, snaps);
+    $('snapEditor').classList.remove('open'); renderSnapPage('active'); renderSnapPage('archive');
+  });
+});
+$('btnDeleteSnap').addEventListener('click', ()=>{
+  confirmAction('Delete permanently?','This cannot be undone.', ()=>{
+    let snaps = load(K.snaps,[]); snaps = snaps.filter(x=>x.id!==editingSnapId); save(K.snaps, snaps);
+    $('snapEditor').classList.remove('open'); renderSnapPage('active'); renderSnapPage('archive');
+  });
+});
+
+/* =========================================================
+   SETTINGS
+========================================================= */
+function renderSettings(){
+  const bots = load(K.bots,[]);
+  const container = $('setBots'); container.innerHTML='';
+  bots.forEach((b,idx)=>{
+    const row = document.createElement('div'); row.className='settings-row';
+    row.innerHTML = `
+      <button class="btn sm ghost" data-bot-up="${idx}">▲</button>
+      <button class="btn sm ghost" data-bot-down="${idx}">▼</button>
+      <input type="text" value="${escapeHtml(b.name)}" data-bot-name="${idx}"/>
+      <label style="min-width:auto"><input type="checkbox" ${b.daily?'checked':''} data-bot-daily="${idx}"/> daily</label>
+      <button class="btn sm ghost" data-bot-arch="${idx}">${b.archived?'Unarchive':'Archive'}</button>
+      <button class="btn sm danger" data-bot-del="${idx}">Delete</button>`;
+    container.appendChild(row);
+  });
+  const s = load(K.settings,{});
+  renderTagList('setDomains', s.domains, 'domain');
+  renderTagList('setEfforts', s.efforts, 'effort');
+  $('setWeekStart').value = String(s.weekStart||1);
+  // tz
+  const tzSel = $('setTz'); tzSel.innerHTML='';
+  commonTzList().forEach(z=>{ const o=document.createElement('option'); o.value=z; o.textContent=z; tzSel.appendChild(o); });
+  tzSel.value = currentTz();
+}
+function renderTagList(id, arr, kind){
+  const c = $(id); c.innerHTML='';
+  (arr||[]).forEach((v,idx)=>{
+    const row = document.createElement('div'); row.className='settings-row';
+    row.innerHTML = `<input type="text" value="${escapeHtml(v)}" data-tag-name="${kind}:${idx}"/>
+      <button class="btn sm danger" data-tag-del="${kind}:${idx}">✕</button>`;
+    c.appendChild(row);
+  });
+}
+document.addEventListener('input', e=>{
+  const bn = e.target.dataset.botName;
+  if(bn!==undefined){ const bots=load(K.bots,[]); bots[bn].name=e.target.value; save(K.bots,bots); }
+  const tn = e.target.dataset.tagName;
+  if(tn){ const [kind,idx]=tn.split(':'); const s=load(K.settings,{}); const k=kind==='domain'?'domains':'efforts'; s[k][idx]=e.target.value; save(K.settings,s); }
+});
+document.addEventListener('change', e=>{
+  const d = e.target.dataset.botDaily;
+  if(d!==undefined){ const bots=load(K.bots,[]); bots[d].daily=e.target.checked; save(K.bots,bots); renderStreaks(); }
+  if(e.target===$('setWeekStart')){ const s=load(K.settings,{}); s.weekStart=Number(e.target.value); save(K.settings,s); }
+  if(e.target===$('setTz')){ const s=load(K.settings,{}); s.tz=e.target.value; save(K.settings,s); tickClock(); renderBots(); renderWeek(); }
+});
+document.addEventListener('click', e=>{
+  const up=e.target.dataset.botUp, dn=e.target.dataset.botDown, ar=e.target.dataset.botArch, del=e.target.dataset.botDel;
+  if(up!==undefined){ const bots=load(K.bots,[]); const i=+up; if(i>0){[bots[i-1],bots[i]]=[bots[i],bots[i-1]]; save(K.bots,bots); renderSettings(); renderBots();} }
+  if(dn!==undefined){ const bots=load(K.bots,[]); const i=+dn; if(i<bots.length-1){[bots[i+1],bots[i]]=[bots[i],bots[i+1]]; save(K.bots,bots); renderSettings(); renderBots();} }
+  if(ar!==undefined){ const bots=load(K.bots,[]); bots[+ar].archived=!bots[+ar].archived; save(K.bots,bots); renderSettings(); renderBots(); }
+  if(del!==undefined){ confirmAction('Delete bot?','History (engagements) preserved by name.', ()=>{ const bots=load(K.bots,[]); bots.splice(+del,1); save(K.bots,bots); renderSettings(); renderBots(); }); }
+  const td = e.target.dataset.tagDel;
+  if(td){ const [kind,idx]=td.split(':'); const s=load(K.settings,{}); const k=kind==='domain'?'domains':'efforts'; s[k].splice(+idx,1); save(K.settings,s); renderSettings(); renderTasks(); }
+});
+$('btnAddBot').addEventListener('click', ()=>{
+  const n=$('newBotName').value.trim(); if(!n) return;
+  const bots=load(K.bots,[]); bots.push({name:n, daily:true, archived:false}); save(K.bots,bots);
+  $('newBotName').value=''; renderSettings(); renderBots();
+});
+$('btnAddDomain').addEventListener('click', ()=>{
+  const v=$('newDomain').value.trim(); if(!v) return;
+  const s=load(K.settings,{}); s.domains.push(v); save(K.settings,s); $('newDomain').value=''; renderSettings(); renderTasks();
+});
+$('btnAddEffort').addEventListener('click', ()=>{
+  const v=$('newEffort').value.trim(); if(!v) return;
+  const s=load(K.settings,{}); s.efforts.push(v); save(K.settings,s); $('newEffort').value=''; renderSettings(); renderTasks();
+});
+
+/* Import/export */
+$('btnExport').addEventListener('click', ()=>{
+  const dump = {};
+  Object.values(K).forEach(k=>dump[k]=load(k,null));
+  const blob = new Blob([JSON.stringify(dump,null,2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`alcc-backup-${isoDate()}.json`; a.click();
+});
+$('btnImport').addEventListener('click', ()=>$('fileImport').click());
+$('fileImport').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const data = JSON.parse(r.result);
+      confirmAction('Overwrite all data?','Existing app data will be replaced.', ()=>{
+        Object.values(K).forEach(k=>{ if(k in data) localStorage.setItem(k, JSON.stringify(data[k])); });
+        location.reload();
+      });
+    } catch(err){ alert('Invalid JSON'); }
+  };
+  r.readAsText(f);
+});
+$('btnClear').addEventListener('click', ()=>{
+  confirmAction('Clear ALL data?','This wipes localStorage for this app.', ()=>{
+    confirmAction('Really clear?','Last chance — this cannot be undone.', ()=>{
+      Object.values(K).forEach(k=>localStorage.removeItem(k)); location.reload();
+    });
+  });
+});
+
+/* Theme */
+$('themeToggle').addEventListener('click', ()=>{
+  const cur = document.documentElement.dataset.theme;
+  const next = cur==='dark'?'light':'dark';
+  document.documentElement.dataset.theme = next;
+  const s = load(K.settings,{}); s.theme = next; save(K.settings, s);
+});
+
+/* =========================================================
+   INIT
+========================================================= */
+function init(){
+  const s = load(K.settings,{}); document.documentElement.dataset.theme = s.theme||'light';
+  fillBotSelect($('snapBot'), true);
+  renderBots(); renderRituals(); renderTasks();
+  applyCollapsed();
+  const ui = load(K.ui,{lastTab:'today'}); showTab(ui.lastTab||'today');
+  tickClock();
+}
+init();
+</script>
+</body>
+</html>
