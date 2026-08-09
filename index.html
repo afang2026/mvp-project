@@ -104,6 +104,9 @@ label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--m
   border-radius:7px;font-size:12px}
 .seg button.on{background:var(--terracotta);color:#fff}
 .status{font-size:12px;color:var(--muted);margin-top:8px}
+.banner{background:rgba(176,96,63,.10);border:1px solid var(--terracotta);color:var(--ink);
+  border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.banner button{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:16px}
 
 /* week calendar */
 .weeknav{display:flex;align-items:center;gap:12px;margin-bottom:12px}
@@ -161,12 +164,15 @@ label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--m
 .modal{position:fixed;inset:0;background:rgba(20,15,10,.5);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
 .modal.open{display:flex}
 .modal-inner{background:var(--card-solid);border-radius:16px;padding:24px;max-width:640px;width:100%;
-  max-height:90vh;overflow-y:auto;box-shadow:var(--shadow)}
+  max-height:90vh;overflow-y:auto;box-shadow:var(--shadow);position:relative}
 .modal-inner h3{margin-bottom:14px}
+.modal-close{position:absolute;top:14px;right:16px;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1}
 .modal-row{margin-bottom:14px}
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
 .reply-row{background:var(--parchment);border-radius:10px;padding:10px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px}
-.reply-row .meta-row{display:flex;gap:8px;font-size:11px;color:var(--muted);align-items:center}
+.reply-row .meta-row{display:flex;gap:8px;font-size:11px;color:var(--muted);align-items:center;flex-wrap:wrap}
+.reply-row .reply-controls{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+@media(max-width:520px){.reply-row .reply-controls{grid-template-columns:1fr}}
 .reply-actions{display:flex;gap:6px;justify-content:flex-end}
 
 /* settings */
@@ -226,6 +232,8 @@ label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--m
     <button class="theme-toggle" id="themeToggle">◐ theme</button>
   </div>
 </header>
+
+<div id="autoArchiveBanner"></div>
 
 <nav class="tabs" id="tabs">
   <button class="tab active" data-tab="today">Today</button>
@@ -375,6 +383,14 @@ label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--m
           <select id="setTz"></select>
         </div>
         <div class="modal-row">
+          <label>Auto-archive threads older than (days, 0 = off)</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="number" id="setAutoArc" min="0" step="1" style="max-width:120px"/>
+            <button class="btn small ghost" id="runAutoArc">Run now</button>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Uses each thread's latest activity date, so recently-replied threads survive.</div>
+        </div>
+        <div class="modal-row">
           <label>Domain tags</label>
           <div class="tag-list" id="domTags"></div>
           <div style="display:flex;gap:6px;margin-top:8px"><input id="newDom" placeholder="Add domain"/><button class="btn small" id="addDom">+</button></div>
@@ -408,6 +424,7 @@ label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--m
 
 <!-- Ritual snapshot modal -->
 <div class="modal" id="ritModal"><div class="modal-inner">
+  <button class="modal-close" data-close-modal="ritModal">✕</button>
   <h3 id="ritModalTitle">Log ritual</h3>
   <div class="modal-row"><label>Snapshot</label><textarea id="ritSnapBox" style="min-height:180px"></textarea></div>
   <div class="modal-row"><label>Bot</label><select id="ritSnapBot"></select></div>
@@ -419,6 +436,7 @@ label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--m
 
 <!-- Snapshot editor -->
 <div class="modal" id="editModal"><div class="modal-inner">
+  <button class="modal-close" id="editCloseX">✕</button>
   <h3>Edit snapshot thread</h3>
   <div class="modal-row"><label>Bot</label><select id="editBot"></select></div>
   <div class="modal-row"><label>Created at</label><input type="datetime-local" id="editCreated"/></div>
@@ -433,7 +451,7 @@ label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--m
   </div>
 
   <div class="modal-actions">
-    <button class="btn ghost" data-close-modal="editModal">Close</button>
+    <button class="btn ghost" id="editCloseBtn">Close</button>
     <button class="btn danger" id="editArchive">Archive</button>
     <button class="btn danger" id="editDelete">Delete</button>
     <button class="btn" id="editSave">Save changes</button>
@@ -442,6 +460,7 @@ label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--m
 
 <!-- TZ picker -->
 <div class="modal" id="tzModal"><div class="modal-inner">
+  <button class="modal-close" data-close-modal="tzModal">✕</button>
   <h3>Time zone</h3>
   <div class="modal-row"><select id="tzPick"></select></div>
   <div class="modal-actions">
@@ -451,13 +470,24 @@ label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--m
   </div>
 </div></div>
 
-<!-- Confirm -->
+<!-- Confirm (generic) -->
 <div class="modal" id="confirmModal"><div class="modal-inner" style="max-width:440px">
   <h3 id="confirmTitle">Confirm</h3>
   <p id="confirmMsg" style="color:var(--ink-2)"></p>
   <div class="modal-actions">
     <button class="btn ghost" data-close-modal="confirmModal">Cancel</button>
     <button class="btn" id="confirmOk">Confirm</button>
+  </div>
+</div></div>
+
+<!-- Unsaved-changes prompt (3 buttons) -->
+<div class="modal" id="dirtyModal"><div class="modal-inner" style="max-width:440px">
+  <h3>Unsaved changes</h3>
+  <p style="color:var(--ink-2)">Save your edits before closing?</p>
+  <div class="modal-actions">
+    <button class="btn ghost" id="dirtyDiscard">Discard</button>
+    <button class="btn ghost" id="dirtyCancel">Cancel</button>
+    <button class="btn" id="dirtySave">Save</button>
   </div>
 </div></div>
 
@@ -479,10 +509,12 @@ if(!localStorage.getItem(K.bots)){
     'POE-TEA-🎭Debate-Son46','POE-TAS-🔍NewsFetch-PplxPro'
   ].map(name=>({id:uid(),name,daily:true,archived:false})));
 }
-if(!localStorage.getItem(K.settings))save(K.settings,{theme:'light',weekStart:1,domains:['News','Code','Language','Reflection','Other'],efforts:['Quick','Medium','Deep'],tz:''});
+if(!localStorage.getItem(K.settings))save(K.settings,{theme:'light',weekStart:1,domains:['News','Code','Language','Reflection','Other'],efforts:['Quick','Medium','Deep'],tz:'',autoArchiveDays:30});
 if(!localStorage.getItem(K.rituals))save(K.rituals,[{id:uid(),title:'News platform analysis',freq:'daily',bot:'PHX-COR-📰News-Son46'}]);
 ['engagements','tasks','snapshots','ritLog'].forEach(n=>{if(!localStorage.getItem(K[n]))save(K[n],n==='tasks'||n==='snapshots'?[]:{})});
 if(!localStorage.getItem(K.ui))save(K.ui,{lastTab:'today',collapsed:{},snapSort:'activity',snapView:'list',arcSort:'activity',arcView:'list'});
+// Backfill autoArchiveDays for existing users
+(()=>{const s=load(K.settings,{});if(s.autoArchiveDays===undefined){s.autoArchiveDays=30;save(K.settings,s)}})();
 
 // ========== TIME HELPERS ==========
 const settings=()=>load(K.settings,{});
@@ -497,22 +529,17 @@ const fmtTime=d=>new Intl.DateTimeFormat('en-GB',{timeZone:tz(),hour:'2-digit',m
 const fmtDateLong=d=>new Intl.DateTimeFormat('en-US',{timeZone:tz(),weekday:'long',year:'numeric',month:'long',day:'numeric'}).format(d||new Date());
 const fmtDT=iso=>{const d=new Date(iso);return new Intl.DateTimeFormat('en-US',{timeZone:tz(),month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(d)};
 const nowIso=()=>new Date().toISOString();
-// convert ISO to datetime-local input string in current tz
 const toDTLocal=iso=>{
   const d=new Date(iso);
   const p=new Intl.DateTimeFormat('en-CA',{timeZone:tz(),year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d);
   const g=t=>p.find(x=>x.type===t).value;
   return `${g('year')}-${g('month')}-${g('day')}T${g('hour')}:${g('minute')}`;
 };
-// datetime-local (in tz) back to ISO
 const fromDTLocal=s=>{
-  // Interpret s as being in tz
   const [dp,tp]=s.split('T');
   const [y,mo,da]=dp.split('-').map(Number);
   const [hh,mm]=tp.split(':').map(Number);
-  // Build a UTC date, then adjust by tz offset at that moment
   const utc=Date.UTC(y,mo-1,da,hh,mm);
-  // find offset of tz at that instant
   const asStr=new Intl.DateTimeFormat('en-US',{timeZone:tz(),timeZoneName:'shortOffset'}).format(new Date(utc));
   const m=asStr.match(/GMT([+-]\d+)(?::(\d+))?/);
   let off=0;
@@ -520,7 +547,6 @@ const fromDTLocal=s=>{
   return new Date(utc - off*60*1000).toISOString();
 };
 
-// TZ list
 const TZS=['UTC','America/New_York','America/Chicago','America/Denver','America/Los_Angeles','America/Toronto','America/Sao_Paulo','Europe/London','Europe/Berlin','Europe/Paris','Europe/Rome','Europe/Madrid','Europe/Moscow','Africa/Cairo','Africa/Johannesburg','Asia/Dubai','Asia/Kolkata','Asia/Bangkok','Asia/Singapore','Asia/Hong_Kong','Asia/Shanghai','Asia/Tokyo','Asia/Seoul','Australia/Sydney','Pacific/Auckland'];
 
 // ========== CLOCK ==========
@@ -591,7 +617,6 @@ function renderStreaks(){
   $('streakRow').innerHTML=bots.map(b=>{
     let streak=0;
     let d=new Date();
-    // grace period: if today not engaged, start from yesterday
     if(!(eng[today]||[]).includes(b.name))d.setDate(d.getDate()-1);
     while(true){
       const k=isoDate(d);
@@ -701,7 +726,6 @@ function replyFocus(r){
   const p=parseSnapshot(r.text||'');
   return p.focus||(r.text||'').split('\n')[0].slice(0,80);
 }
-function previewText(s){return (s.raw||'').replace(/\s+/g,' ').slice(0,120)}
 
 // ========== SNAPSHOTS/ARCHIVE RENDERING ==========
 function ctxCardHtml(reply,snapId){
@@ -716,19 +740,18 @@ function ctxCardHtml(reply,snapId){
 function threadHtml(s,inKanban=false){
   const replies=s.replies||[];
   if(replies.length===0)return '';
-  // total context items in thread including starter = replies.length + 1
   const total=replies.length+1;
   const cls=inKanban?'kthread':'thread';
-  const collapsed=total>=4;
-  const initialShow=collapsed?2:replies.length; // show last 2 when collapsed, plus toggle
-  const shown=replies.slice(-initialShow);
-  const hidden=replies.slice(0,replies.length-initialShow);
-  const items=(collapsed?[
+  const collapsed=total>=4 && !expandedThreads.has(s.id);
+  const shown=collapsed?replies.slice(-2):replies;
+  const hidden=collapsed?replies.slice(0,replies.length-2):[];
+  const items=[
     ...(hidden.length?[`<button class="thread-collapse" data-expand-thread="${s.id}">▾ Show ${hidden.length} more context card${hidden.length>1?'s':''}</button>`]:[]),
     ...shown.map(r=>ctxCardHtml(r,s.id))
-  ]:replies.map(r=>ctxCardHtml(r,s.id))).join('');
+  ].join('');
   return `<div class="${cls}" data-thread="${s.id}">${items}</div>`;
 }
+const expandedThreads=new Set();
 
 function filterSnaps(list,q){
   q=q.toLowerCase().trim();if(!q)return list;
@@ -772,7 +795,6 @@ function kanbanCardHtml(s){
   </div>`;
 }
 
-// bucket for activity/created columns
 function timeBucket(iso){
   if(!iso)return 'Older';
   const d=isoDate(new Date(iso));
@@ -780,16 +802,14 @@ function timeBucket(iso){
   const yest=isoDate(new Date(Date.now()-86400000));
   if(d===today)return 'Today';
   if(d===yest)return 'Yesterday';
-  // this week
   const now=new Date();const dow=now.getDay();const ws=settings().weekStart||1;
   const daysFromStart=(dow-ws+7)%7;
   const start=new Date(now);start.setDate(now.getDate()-daysFromStart);
   const s0=isoDate(start);
   if(d>=s0)return 'This week';
-  const lastEnd=new Date(start);lastEnd.setDate(start.getDate()-1);
   const lastStart=new Date(start);lastStart.setDate(start.getDate()-7);
   if(d>=isoDate(lastStart))return 'Last week';
-  return d.slice(0,7); // YYYY-MM
+  return d.slice(0,7);
 }
 const BUCKET_ORDER=['Today','Yesterday','This week','Last week'];
 
@@ -812,14 +832,10 @@ function renderContainer(containerId,archived){
     return;
   }
 
-  // KANBAN
   const cols={};const order=[];
   const push=(key,s)=>{if(!cols[key]){cols[key]=[];order.push(key)}cols[key].push(s)};
   if(sortMode==='bot'){
-    all.forEach(s=>{
-      const bots=threadBots(s);
-      bots.forEach(b=>push(b,s));
-    });
+    all.forEach(s=>{threadBots(s).forEach(b=>push(b,s))});
     order.sort();
   } else {
     all.forEach(s=>{
@@ -840,14 +856,13 @@ function renderContainer(containerId,archived){
 function renderSnaps(){renderContainer('snapContainer',false)}
 function renderArc(){renderContainer('arcContainer',true)}
 
-// wire sort/view segs
 function wireSeg(segId,uiKeyPrefix,cb){
   const seg=document.getElementById(segId);
   const ui=load(K.ui,{});
   seg.querySelectorAll('button').forEach(b=>{
     const val=b.dataset.sort||b.dataset.view;
     const key=b.dataset.sort?uiKeyPrefix+'Sort':uiKeyPrefix+'View';
-    if(ui[key]===val)seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')),b.classList.add('on');
+    if(ui[key]===val){seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on')}
     b.onclick=()=>{
       seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
       const u=load(K.ui,{});u[key]=val;save(K.ui,u);cb();
@@ -861,7 +876,6 @@ wireSeg('arcView','arc',renderArc);
 $('snapSearch').oninput=renderSnaps;
 $('arcSearch').oninput=renderArc;
 
-// snapshot interactions (delegated)
 document.addEventListener('click',e=>{
   const tog=e.target.closest('[data-snap-toggle]');
   if(tog && !e.target.closest('[data-snap-edit]')){
@@ -874,29 +888,19 @@ document.addEventListener('click',e=>{
   if(edit){openEditor(edit.dataset.snapEdit);return}
   const exp=e.target.closest('[data-expand-thread]');
   if(exp){
-    const id=exp.dataset.expandThread;
-    // simply mark this thread as expanded by adding class, then re-render only that card
-    expandedThreads.add(id);
+    expandedThreads.add(exp.dataset.expandThread);
     renderSnaps();renderArc();
   }
 });
 
-// track expanded threads in-session so users can override auto-collapse
-const expandedThreads=new Set();
-// override threadHtml when expanded
-const _threadHtml=threadHtml;
-threadHtml=function(s,inKanban){
-  if(!expandedThreads.has(s.id))return _threadHtml(s,inKanban);
-  const replies=s.replies||[];if(!replies.length)return '';
-  const cls=inKanban?'kthread':'thread';
-  return `<div class="${cls}">${replies.map(r=>ctxCardHtml(r,s.id)).join('')}</div>`;
-};
-
-// ========== EDITOR MODAL ==========
+// ========== EDITOR MODAL (with dirty flag) ==========
 let editingId=null;
+let editorDirty=false;
+function markDirty(){editorDirty=true}
+
 function openEditor(id){
   const snaps=load(K.snapshots,[]);const s=snaps.find(x=>x.id===id);if(!s)return;
-  editingId=id;
+  editingId=id;editorDirty=false;
   fillBotSelect($('editBot'),s.bot||'');
   $('editCreated').value=toDTLocal(s.createdAt);
   $('editFocus').value=s.focus||'';
@@ -910,10 +914,15 @@ function openEditor(id){
 function renderRepliesEditor(s){
   const el=$('editReplies');
   if(!(s.replies||[]).length){el.innerHTML='<div style="color:var(--muted);font-size:12px">No follow-ups yet.</div>';return}
+  const activeBots=load(K.bots,[]).filter(b=>!b.archived).map(b=>b.name);
   el.innerHTML=s.replies.map((r,i)=>{
+    const opts=['',...activeBots].map(n=>`<option value="${n}" ${n===r.bot?'selected':''}>${n||'— no bot —'}</option>`).join('');
     return `<div class="reply-row" data-reply="${r.id}">
-      <div class="meta-row"><span>#${i+1}</span><span>${fmtDT(r.updatedAt||r.createdAt)}</span></div>
-      <select class="replyBot">${['',...load(K.bots,[]).filter(b=>!b.archived).map(b=>b.name)].map(n=>`<option value="${n}" ${n===r.bot?'selected':''}>${n||'— no bot —'}</option>`).join('')}</select>
+      <div class="meta-row"><span>#${i+1}</span><span>last edit ${fmtDT(r.updatedAt||r.createdAt)}</span></div>
+      <div class="reply-controls">
+        <div><label>Bot</label><select class="replyBot">${opts}</select></div>
+        <div><label>Created at</label><input type="datetime-local" class="replyCreated" value="${toDTLocal(r.createdAt)}"/></div>
+      </div>
       <input type="text" class="replyFocus" placeholder="Focus (optional)" value="${(r.focus||'').replace(/"/g,'&quot;')}"/>
       <textarea class="replyText" style="min-height:80px">${(r.text||'').replace(/</g,'&lt;')}</textarea>
       <div class="reply-actions">
@@ -923,6 +932,13 @@ function renderRepliesEditor(s){
     </div>`;
   }).join('');
 }
+
+// mark dirty on any input change in the editor
+['editBot','editCreated','editFocus','editRaw','newReplyText','newReplyBot'].forEach(id=>{
+  const el=$(id);el.addEventListener('input',markDirty);el.addEventListener('change',markDirty);
+});
+$('editReplies').addEventListener('input',markDirty);
+$('editReplies').addEventListener('change',markDirty);
 
 $('addReply').onclick=()=>{
   const text=$('newReplyText').value.trim();if(!text)return;
@@ -934,6 +950,7 @@ $('addReply').onclick=()=>{
   s.updatedAt=now;
   save(K.snapshots,snaps);renderRepliesEditor(s);
   $('newReplyText').value='';$('newReplyBot').value='';
+  editorDirty=false; // just persisted
   renderSnaps();renderArc();
 };
 
@@ -947,34 +964,64 @@ $('editReplies').addEventListener('click',e=>{
       save(K.snapshots,snaps);renderRepliesEditor(s);renderSnaps();renderArc();
     });
   } else if(sv){
-    confirmAction('Save reply?','Update this context card in the thread.',()=>{
-      const snaps=load(K.snapshots,[]);const s=snaps.find(x=>x.id===editingId);
-      const r=(s.replies||[]).find(x=>x.id===sv);if(!r)return;
-      const row=e.target.closest('.reply-row');
-      r.bot=row.querySelector('.replyBot').value;
-      r.focus=row.querySelector('.replyFocus').value;
-      r.text=row.querySelector('.replyText').value;
-      r.updatedAt=nowIso();s.updatedAt=r.updatedAt;
-      save(K.snapshots,snaps);renderRepliesEditor(s);renderSnaps();renderArc();
-    });
+    // Save this individual reply immediately (no confirm — closing-guard handles bulk)
+    const snaps=load(K.snapshots,[]);const s=snaps.find(x=>x.id===editingId);
+    const r=(s.replies||[]).find(x=>x.id===sv);if(!r)return;
+    const row=e.target.closest('.reply-row');
+    r.bot=row.querySelector('.replyBot').value;
+    r.focus=row.querySelector('.replyFocus').value;
+    r.text=row.querySelector('.replyText').value;
+    try{const nc=fromDTLocal(row.querySelector('.replyCreated').value);r.createdAt=nc}catch{}
+    r.updatedAt=nowIso();s.updatedAt=r.updatedAt;
+    save(K.snapshots,snaps);renderRepliesEditor(s);renderSnaps();renderArc();
   }
 });
 
-$('editSave').onclick=()=>{
-  confirmAction('Save changes?','Update this snapshot.',()=>{
-    const snaps=load(K.snapshots,[]);const s=snaps.find(x=>x.id===editingId);
-    s.bot=$('editBot').value;
-    s.focus=$('editFocus').value;
-    s.raw=$('editRaw').value;
-    try{s.createdAt=fromDTLocal($('editCreated').value)}catch{}
-    s.updatedAt=nowIso();
-    save(K.snapshots,snaps);closeModal('editModal');renderSnaps();renderArc();renderWeek();
+function commitEditorSave(){
+  const snaps=load(K.snapshots,[]);const s=snaps.find(x=>x.id===editingId);if(!s)return;
+  s.bot=$('editBot').value;
+  s.focus=$('editFocus').value;
+  s.raw=$('editRaw').value;
+  try{s.createdAt=fromDTLocal($('editCreated').value)}catch{}
+  // apply any pending reply-row edits too
+  document.querySelectorAll('#editReplies .reply-row').forEach(row=>{
+    const rid=row.dataset.reply;const r=(s.replies||[]).find(x=>x.id===rid);if(!r)return;
+    r.bot=row.querySelector('.replyBot').value;
+    r.focus=row.querySelector('.replyFocus').value;
+    r.text=row.querySelector('.replyText').value;
+    try{r.createdAt=fromDTLocal(row.querySelector('.replyCreated').value)}catch{}
+    r.updatedAt=r.updatedAt||nowIso();
   });
-};
+  s.updatedAt=nowIso();
+  save(K.snapshots,snaps);
+  editorDirty=false;
+  renderSnaps();renderArc();renderWeek();
+}
+
+$('editSave').onclick=()=>{commitEditorSave();closeModal('editModal')};
+
+function tryCloseEditor(){
+  if(!editorDirty){closeModal('editModal');return}
+  openModal('dirtyModal');
+}
+$('editCloseBtn').onclick=tryCloseEditor;
+$('editCloseX').onclick=tryCloseEditor;
+// intercept overlay & Esc for the editor
+document.getElementById('editModal').addEventListener('click',e=>{
+  if(e.target.id==='editModal'){e.stopPropagation();tryCloseEditor()}
+},true);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape' && document.getElementById('editModal').classList.contains('open')){tryCloseEditor()}
+});
+
+$('dirtyDiscard').onclick=()=>{editorDirty=false;closeModal('dirtyModal');closeModal('editModal')};
+$('dirtyCancel').onclick=()=>closeModal('dirtyModal');
+$('dirtySave').onclick=()=>{commitEditorSave();closeModal('dirtyModal');closeModal('editModal')};
+
 $('editDelete').onclick=()=>{
   confirmAction('Delete snapshot?','The whole thread (and all replies) will be permanently removed.',()=>{
     let snaps=load(K.snapshots,[]);snaps=snaps.filter(s=>s.id!==editingId);save(K.snapshots,snaps);
-    closeModal('editModal');renderSnaps();renderArc();renderWeek();
+    editorDirty=false;closeModal('editModal');renderSnaps();renderArc();renderWeek();
   });
 };
 $('editArchive').onclick=()=>{
@@ -982,7 +1029,7 @@ $('editArchive').onclick=()=>{
   const to=!s.archived;
   confirmAction(to?'Archive thread?':'Unarchive thread?',to?'Moves to Archive tab.':'Restores to active Snapshots.',()=>{
     s.archived=to;s.updatedAt=nowIso();save(K.snapshots,snaps);
-    closeModal('editModal');renderSnaps();renderArc();
+    editorDirty=false;closeModal('editModal');renderSnaps();renderArc();
   });
 };
 
@@ -1000,6 +1047,7 @@ function weekStart(offset=0){
   return anchor;
 }
 function renderWeek(){
+  if(!$('wkGrid'))return;
   const start=weekStart(wkOffset);
   const days=[];
   for(let i=0;i<7;i++){const d=new Date(start);d.setUTCDate(start.getUTCDate()+i);days.push(d)}
@@ -1022,7 +1070,6 @@ function renderWeek(){
     </div>`;
   }).join('');
 
-  // export
   const lines=[`Weekly summary — ${label}`,''];
   days.forEach(d=>{const k=isoDate(d);const engs=eng[k]||[];const ss=snaps.filter(s=>isoDate(new Date(s.createdAt))===k);
     if(engs.length||ss.length){lines.push(`## ${k}`);if(engs.length)lines.push('Engaged: '+engs.join(', '));ss.forEach(s=>{lines.push(`- [${s.bot||'no bot'}] ${s.focus||''}`);(s.replies||[]).forEach(r=>lines.push(`   ↳ [${r.bot||'no bot'}] ${replyFocus(r)}`))});lines.push('')}
@@ -1052,6 +1099,7 @@ function renderSettings(){
   $('setWeekStart').value=s.weekStart||1;
   $('setTz').innerHTML=['<option value="">System ('+Intl.DateTimeFormat().resolvedOptions().timeZone+')</option>',...TZS.map(z=>`<option value="${z}">${z}</option>`)].join('');
   $('setTz').value=s.tz||'';
+  $('setAutoArc').value=s.autoArchiveDays??30;
 
   const dom=$('domTags'),eff=$('effTags');
   dom.innerHTML=s.domains.map(d=>`<span class="tag">${d}<button data-del-dom="${d}">×</button></span>`).join('');
@@ -1075,6 +1123,8 @@ $('botAdmin').addEventListener('change',e=>{
 $('addBot').onclick=()=>{const n=$('newBotName').value.trim();if(!n)return;const bots=load(K.bots,[]);bots.push({id:uid(),name:n,daily:true,archived:false});save(K.bots,bots);$('newBotName').value='';renderSettings();renderBots();renderRituals()};
 $('setWeekStart').onchange=e=>{const s=settings();s.weekStart=parseInt(e.target.value);save(K.settings,s);renderWeek()};
 $('setTz').onchange=e=>{const s=settings();s.tz=e.target.value;save(K.settings,s);tickClock();renderBots();renderWeek()};
+$('setAutoArc').onchange=e=>{const s=settings();s.autoArchiveDays=Math.max(0,parseInt(e.target.value)||0);save(K.settings,s)};
+$('runAutoArc').onclick=()=>{const n=runAutoArchive(true);showAutoArchiveBanner(n,true)};
 
 $('addDom').onclick=()=>{const v=$('newDom').value.trim();if(!v)return;const s=settings();s.domains.push(v);save(K.settings,s);$('newDom').value='';renderSettings();fillTagSelects()};
 $('addEff').onclick=()=>{const v=$('newEff').value.trim();if(!v)return;const s=settings();s.efforts.push(v);save(K.settings,s);$('newEff').value='';renderSettings();fillTagSelects()};
@@ -1112,7 +1162,7 @@ function openModal(id){document.getElementById(id).classList.add('open')}
 function closeModal(id){document.getElementById(id).classList.remove('open')}
 document.addEventListener('click',e=>{
   const c=e.target.dataset.closeModal;if(c)closeModal(c);
-  if(e.target.classList.contains('modal'))e.target.classList.remove('open');
+  if(e.target.classList.contains('modal') && e.target.id!=='editModal')e.target.classList.remove('open');
 });
 function confirmAction(title,msg,cb){
   $('confirmTitle').textContent=title;$('confirmMsg').textContent=msg;
@@ -1121,8 +1171,41 @@ function confirmAction(title,msg,cb){
   ok.addEventListener('click',handler);
 }
 
+// ========== AUTO-ARCHIVE ==========
+function daysBetween(isoA,isoB){
+  const a=new Date(isoA).getTime(),b=new Date(isoB).getTime();
+  return Math.floor((b-a)/86400000);
+}
+function runAutoArchive(force=false){
+  const s=settings();
+  const days=s.autoArchiveDays||0;
+  if(!days)return 0;
+  const ui=load(K.ui,{});
+  const todayKey=isoDate();
+  if(!force && ui.lastAutoArchive===todayKey)return 0;
+  const snaps=load(K.snapshots,[]);
+  const nowIsoStr=nowIso();
+  let n=0;
+  snaps.forEach(s=>{
+    if(s.archived)return;
+    const last=latestActivity(s)||s.createdAt;
+    if(!last)return;
+    if(daysBetween(last,nowIsoStr)>=days){s.archived=true;s.updatedAt=nowIsoStr;n++}
+  });
+  if(n>0)save(K.snapshots,snaps);
+  ui.lastAutoArchive=todayKey;save(K.ui,ui);
+  return n;
+}
+function showAutoArchiveBanner(n,manual=false){
+  const el=$('autoArchiveBanner');
+  if(!n){if(manual)el.innerHTML=`<div class="banner"><span>No threads were old enough to auto-archive.</span><button data-dismiss-banner>✕</button></div>`;return}
+  el.innerHTML=`<div class="banner"><span>🗂 ${n} thread${n>1?'s':''} auto-archived (older than ${settings().autoArchiveDays} days).</span><button data-dismiss-banner>✕</button></div>`;
+}
+document.addEventListener('click',e=>{if(e.target.dataset.dismissBanner!==undefined)$('autoArchiveBanner').innerHTML=''});
+
 // ========== INIT ==========
 fillTagSelects();renderBots();renderRituals();renderTasks();
 const initTab=load(K.ui,{}).lastTab||'today';showTab(initTab);
+const _autoN=runAutoArchive(false);if(_autoN>0)showAutoArchiveBanner(_autoN,false);
 </script>
 </body></html>
