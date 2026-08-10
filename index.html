@@ -108,6 +108,16 @@ label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--m
   border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .banner button{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:16px}
 
+/* NEW: timestamp styling — bold terracotta serif for created, muted italic for edited */
+.ts-created{font-family:'Cormorant Garamond',serif;font-weight:600;color:var(--terracotta);font-size:12px}
+.ts-edited{color:var(--muted);font-size:11px;font-style:italic}
+.ts-sep{color:var(--muted);margin:0 4px}
+
+/* NEW: dirty dot in editor title */
+.dirty-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--stone-2);margin-left:8px;vertical-align:middle;transition:background .15s}
+.dirty .dirty-dot{background:var(--terracotta)}
+.editor-hint{font-size:11px;color:var(--muted);margin-top:-8px;margin-bottom:12px;font-style:italic}
+
 /* week calendar */
 .weeknav{display:flex;align-items:center;gap:12px;margin-bottom:12px}
 .wk-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
@@ -125,7 +135,7 @@ label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--m
 /* snapshots */
 .snap-card{background:var(--card-solid);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
 .snap-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;cursor:pointer}
-.snap-meta{font-size:11px;color:var(--muted);margin-top:4px}
+.snap-meta{font-size:11px;color:var(--muted);margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;align-items:baseline}
 .snap-focus{font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--ink);margin-top:2px}
 .snap-body{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)}
 .snap-card.open .snap-body{display:block}
@@ -136,9 +146,9 @@ label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--m
 .ctxcard{background:var(--parchment);border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;
   display:flex;flex-direction:column;gap:4px;transition:all .15s}
 .ctxcard:hover{border-color:var(--terracotta-2)}
-.ctxcard .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.ctxcard .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
 .ctxcard .bot-lab{font-size:11px;color:var(--terracotta);letter-spacing:.06em}
-.ctxcard .when{font-size:10px;color:var(--muted)}
+.ctxcard .when{display:flex;gap:4px;align-items:baseline;flex-wrap:wrap}
 .ctxcard .focus{font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--ink);line-height:1.3}
 .ctxcard .preview{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .thread-collapse{background:transparent;border:1px dashed var(--border);border-radius:8px;padding:6px 10px;
@@ -153,7 +163,7 @@ label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--m
 .kcard{background:var(--card-solid);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer}
 .kcard:hover{border-color:var(--terracotta-2)}
 .kcard .kfocus{font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--ink);margin-bottom:4px;line-height:1.2}
-.kcard .kmeta{font-size:11px;color:var(--muted)}
+.kcard .kmeta{font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px;align-items:baseline}
 .kthread{margin-top:8px;padding-left:10px;border-left:2px solid var(--border);display:flex;flex-direction:column;gap:6px}
 .kctx{background:var(--parchment);border:1px solid var(--border);border-radius:8px;padding:6px 8px;cursor:pointer;font-size:12px}
 .kctx:hover{border-color:var(--terracotta-2)}
@@ -170,7 +180,7 @@ label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--m
 .modal-row{margin-bottom:14px}
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
 .reply-row{background:var(--parchment);border-radius:10px;padding:10px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px}
-.reply-row .meta-row{display:flex;gap:8px;font-size:11px;color:var(--muted);align-items:center;flex-wrap:wrap}
+.reply-row .meta-row{display:flex;gap:8px;font-size:11px;color:var(--muted);align-items:baseline;flex-wrap:wrap}
 .reply-row .reply-controls{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 @media(max-width:520px){.reply-row .reply-controls{grid-template-columns:1fr}}
 .reply-actions{display:flex;gap:6px;justify-content:flex-end}
@@ -434,10 +444,11 @@ label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--m
   </div>
 </div></div>
 
-<!-- Snapshot editor -->
-<div class="modal" id="editModal"><div class="modal-inner">
+<!-- Snapshot editor (dirty-flag guarded; no manual Save button) -->
+<div class="modal" id="editModal"><div class="modal-inner" id="editModalInner">
   <button class="modal-close" id="editCloseX">✕</button>
-  <h3>Edit snapshot thread</h3>
+  <h3>Edit snapshot thread<span class="dirty-dot" id="dirtyDot" title="Unsaved changes indicator"></span></h3>
+  <div class="editor-hint">Edits save automatically when you close this window.</div>
   <div class="modal-row"><label>Bot</label><select id="editBot"></select></div>
   <div class="modal-row"><label>Created at</label><input type="datetime-local" id="editCreated"/></div>
   <div class="modal-row"><label>Session focus</label><input type="text" id="editFocus" placeholder="(edit focus here)"/></div>
@@ -454,7 +465,6 @@ label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--m
     <button class="btn ghost" id="editCloseBtn">Close</button>
     <button class="btn danger" id="editArchive">Archive</button>
     <button class="btn danger" id="editDelete">Delete</button>
-    <button class="btn" id="editSave">Save changes</button>
   </div>
 </div></div>
 
@@ -513,7 +523,6 @@ if(!localStorage.getItem(K.settings))save(K.settings,{theme:'light',weekStart:1,
 if(!localStorage.getItem(K.rituals))save(K.rituals,[{id:uid(),title:'News platform analysis',freq:'daily',bot:'PHX-COR-📰News-Son46'}]);
 ['engagements','tasks','snapshots','ritLog'].forEach(n=>{if(!localStorage.getItem(K[n]))save(K[n],n==='tasks'||n==='snapshots'?[]:{})});
 if(!localStorage.getItem(K.ui))save(K.ui,{lastTab:'today',collapsed:{},snapSort:'activity',snapView:'list',arcSort:'activity',arcView:'list'});
-// Backfill autoArchiveDays for existing users
 (()=>{const s=load(K.settings,{});if(s.autoArchiveDays===undefined){s.autoArchiveDays=30;save(K.settings,s)}})();
 
 // ========== TIME HELPERS ==========
@@ -546,6 +555,16 @@ const fromDTLocal=s=>{
   if(m){off=parseInt(m[1])*60+(m[2]?parseInt(m[2])*(m[1].startsWith('-')?-1:1):0)}
   return new Date(utc - off*60*1000).toISOString();
 };
+
+// NEW: dual-timestamp renderer. Created is bold+terracotta; edited is muted italic.
+// If updatedAt is missing or equal to createdAt (never edited), only shows created.
+function tsPair(createdIso, updatedIso){
+  const c=`<span class="ts-created" title="Created">${fmtDT(createdIso)}</span>`;
+  if(!updatedIso || updatedIso===createdIso) return c;
+  // ignore updated timestamps within 60s of created (auto-set on creation)
+  if(Math.abs(new Date(updatedIso)-new Date(createdIso))<60000) return c;
+  return `${c}<span class="ts-sep">·</span><span class="ts-edited" title="Last edited">edited ${fmtDT(updatedIso)}</span>`;
+}
 
 const TZS=['UTC','America/New_York','America/Chicago','America/Denver','America/Los_Angeles','America/Toronto','America/Sao_Paulo','Europe/London','Europe/Berlin','Europe/Paris','Europe/Rome','Europe/Madrid','Europe/Moscow','Africa/Cairo','Africa/Johannesburg','Asia/Dubai','Asia/Kolkata','Asia/Bangkok','Asia/Singapore','Asia/Hong_Kong','Asia/Shanghai','Asia/Tokyo','Asia/Seoul','Australia/Sydney','Pacific/Auckland'];
 
@@ -732,7 +751,10 @@ function ctxCardHtml(reply,snapId){
   const focus=replyFocus(reply)||'(no focus)';
   const prev=(reply.text||'').replace(/\s+/g,' ').slice(0,80);
   return `<div class="ctxcard" data-snap-edit="${snapId}" data-reply-focus="${reply.id}">
-    <div class="top"><span class="bot-lab">${reply.bot||'(no bot)'}</span><span class="when">${fmtDT(reply.updatedAt||reply.createdAt)}</span></div>
+    <div class="top">
+      <span class="bot-lab">${reply.bot||'(no bot)'}</span>
+      <span class="when">${tsPair(reply.createdAt, reply.updatedAt)}</span>
+    </div>
     <div class="focus">${focus}</div>
     ${prev?`<div class="preview">${prev}</div>`:''}
   </div>`;
@@ -770,13 +792,18 @@ function sortSnaps(list,mode){
 
 function listCardHtml(s){
   const bots=threadBots(s);
-  const activity=latestActivity(s);
   const total=(s.replies||[]).length+1;
   return `<div class="snap-card" data-snap="${s.id}">
     <div class="snap-head" data-snap-toggle="${s.id}">
       <div style="flex:1">
         <div class="snap-focus">${s.focus||'(no focus parsed)'}</div>
-        <div class="snap-meta">${bots.join(' • ')} — created ${fmtDT(s.createdAt)} • activity ${fmtDT(activity)} • ${total} card${total>1?'s':''}</div>
+        <div class="snap-meta">
+          <span>${bots.join(' • ')}</span>
+          <span class="ts-sep">—</span>
+          ${tsPair(s.createdAt, s.updatedAt)}
+          <span class="ts-sep">•</span>
+          <span>${total} card${total>1?'s':''}</span>
+        </div>
       </div>
       <button class="btn small" data-snap-edit="${s.id}">Edit</button>
     </div>
@@ -788,9 +815,16 @@ function listCardHtml(s){
 }
 
 function kanbanCardHtml(s){
+  const total=(s.replies||[]).length+1;
   return `<div class="kcard" data-snap-edit="${s.id}">
     <div class="kfocus">${s.focus||'(no focus)'}</div>
-    <div class="kmeta">${s.bot||'(no bot)'} • ${fmtDT(latestActivity(s))} • ${(s.replies||[]).length+1} cards</div>
+    <div class="kmeta">
+      <span>${s.bot||'(no bot)'}</span>
+      <span class="ts-sep">•</span>
+      ${tsPair(s.createdAt, latestActivity(s))}
+      <span class="ts-sep">•</span>
+      <span>${total} cards</span>
+    </div>
     ${threadHtml(s,true)}
   </div>`;
 }
@@ -893,14 +927,19 @@ document.addEventListener('click',e=>{
   }
 });
 
-// ========== EDITOR MODAL (with dirty flag) ==========
+// ========== EDITOR MODAL (dirty-flag, no manual save button) ==========
 let editingId=null;
 let editorDirty=false;
-function markDirty(){editorDirty=true}
+function setDirty(v){
+  editorDirty=v;
+  const inner=$('editModalInner');
+  if(v)inner.classList.add('dirty');else inner.classList.remove('dirty');
+}
+function markDirty(){setDirty(true)}
 
 function openEditor(id){
   const snaps=load(K.snapshots,[]);const s=snaps.find(x=>x.id===id);if(!s)return;
-  editingId=id;editorDirty=false;
+  editingId=id;
   fillBotSelect($('editBot'),s.bot||'');
   $('editCreated').value=toDTLocal(s.createdAt);
   $('editFocus').value=s.focus||'';
@@ -909,6 +948,7 @@ function openEditor(id){
   fillBotSelect($('newReplyBot'));
   $('newReplyText').value='';
   $('editArchive').textContent=s.archived?'Unarchive':'Archive';
+  setDirty(false);
   openModal('editModal');
 }
 function renderRepliesEditor(s){
@@ -918,7 +958,11 @@ function renderRepliesEditor(s){
   el.innerHTML=s.replies.map((r,i)=>{
     const opts=['',...activeBots].map(n=>`<option value="${n}" ${n===r.bot?'selected':''}>${n||'— no bot —'}</option>`).join('');
     return `<div class="reply-row" data-reply="${r.id}">
-      <div class="meta-row"><span>#${i+1}</span><span>last edit ${fmtDT(r.updatedAt||r.createdAt)}</span></div>
+      <div class="meta-row">
+        <span>#${i+1}</span>
+        <span class="ts-sep">—</span>
+        ${tsPair(r.createdAt, r.updatedAt)}
+      </div>
       <div class="reply-controls">
         <div><label>Bot</label><select class="replyBot">${opts}</select></div>
         <div><label>Created at</label><input type="datetime-local" class="replyCreated" value="${toDTLocal(r.createdAt)}"/></div>
@@ -927,7 +971,6 @@ function renderRepliesEditor(s){
       <textarea class="replyText" style="min-height:80px">${(r.text||'').replace(/</g,'&lt;')}</textarea>
       <div class="reply-actions">
         <button class="btn ghost small" data-reply-delete="${r.id}">Delete</button>
-        <button class="btn small" data-reply-save="${r.id}">Save</button>
       </div>
     </div>`;
   }).join('');
@@ -940,8 +983,40 @@ function renderRepliesEditor(s){
 $('editReplies').addEventListener('input',markDirty);
 $('editReplies').addEventListener('change',markDirty);
 
+// Read DOM into snapshot object (mutates & saves). Returns updated snap.
+function commitEditorSave(){
+  const snaps=load(K.snapshots,[]);const s=snaps.find(x=>x.id===editingId);if(!s)return null;
+  const now=nowIso();
+  const oldBot=s.bot, oldFocus=s.focus, oldRaw=s.raw, oldCreated=s.createdAt;
+  s.bot=$('editBot').value;
+  s.focus=$('editFocus').value;
+  s.raw=$('editRaw').value;
+  try{s.createdAt=fromDTLocal($('editCreated').value)}catch{}
+  const parentChanged = oldBot!==s.bot || oldFocus!==s.focus || oldRaw!==s.raw || oldCreated!==s.createdAt;
+  // apply reply-row edits
+  let anyReplyChanged=false;
+  document.querySelectorAll('#editReplies .reply-row').forEach(row=>{
+    const rid=row.dataset.reply;const r=(s.replies||[]).find(x=>x.id===rid);if(!r)return;
+    const nBot=row.querySelector('.replyBot').value;
+    const nFocus=row.querySelector('.replyFocus').value;
+    const nText=row.querySelector('.replyText').value;
+    let nCreated=r.createdAt;
+    try{nCreated=fromDTLocal(row.querySelector('.replyCreated').value)}catch{}
+    if(r.bot!==nBot||r.focus!==nFocus||r.text!==nText||r.createdAt!==nCreated){
+      r.bot=nBot;r.focus=nFocus;r.text=nText;r.createdAt=nCreated;r.updatedAt=now;anyReplyChanged=true;
+    }
+  });
+  if(parentChanged||anyReplyChanged) s.updatedAt=now;
+  save(K.snapshots,snaps);
+  setDirty(false);
+  renderSnaps();renderArc();renderWeek();
+  return s;
+}
+
+// Add reply — commit pending edits first so nothing is lost
 $('addReply').onclick=()=>{
   const text=$('newReplyText').value.trim();if(!text)return;
+  commitEditorSave();
   const snaps=load(K.snapshots,[]);const s=snaps.find(x=>x.id===editingId);if(!s)return;
   const p=parseSnapshot(text);
   const now=nowIso();
@@ -950,55 +1025,21 @@ $('addReply').onclick=()=>{
   s.updatedAt=now;
   save(K.snapshots,snaps);renderRepliesEditor(s);
   $('newReplyText').value='';$('newReplyBot').value='';
-  editorDirty=false; // just persisted
+  setDirty(false);
   renderSnaps();renderArc();
 };
 
+// Reply delete (per-row Save button removed; auto-save-on-close handles edits)
 $('editReplies').addEventListener('click',e=>{
   const del=e.target.dataset.replyDelete;
-  const sv=e.target.dataset.replySave;
   if(del){
     confirmAction('Delete reply?','This context card will be removed from the thread.',()=>{
       const snaps=load(K.snapshots,[]);const s=snaps.find(x=>x.id===editingId);
       s.replies=(s.replies||[]).filter(r=>r.id!==del);s.updatedAt=nowIso();
       save(K.snapshots,snaps);renderRepliesEditor(s);renderSnaps();renderArc();
     });
-  } else if(sv){
-    // Save this individual reply immediately (no confirm — closing-guard handles bulk)
-    const snaps=load(K.snapshots,[]);const s=snaps.find(x=>x.id===editingId);
-    const r=(s.replies||[]).find(x=>x.id===sv);if(!r)return;
-    const row=e.target.closest('.reply-row');
-    r.bot=row.querySelector('.replyBot').value;
-    r.focus=row.querySelector('.replyFocus').value;
-    r.text=row.querySelector('.replyText').value;
-    try{const nc=fromDTLocal(row.querySelector('.replyCreated').value);r.createdAt=nc}catch{}
-    r.updatedAt=nowIso();s.updatedAt=r.updatedAt;
-    save(K.snapshots,snaps);renderRepliesEditor(s);renderSnaps();renderArc();
   }
 });
-
-function commitEditorSave(){
-  const snaps=load(K.snapshots,[]);const s=snaps.find(x=>x.id===editingId);if(!s)return;
-  s.bot=$('editBot').value;
-  s.focus=$('editFocus').value;
-  s.raw=$('editRaw').value;
-  try{s.createdAt=fromDTLocal($('editCreated').value)}catch{}
-  // apply any pending reply-row edits too
-  document.querySelectorAll('#editReplies .reply-row').forEach(row=>{
-    const rid=row.dataset.reply;const r=(s.replies||[]).find(x=>x.id===rid);if(!r)return;
-    r.bot=row.querySelector('.replyBot').value;
-    r.focus=row.querySelector('.replyFocus').value;
-    r.text=row.querySelector('.replyText').value;
-    try{r.createdAt=fromDTLocal(row.querySelector('.replyCreated').value)}catch{}
-    r.updatedAt=r.updatedAt||nowIso();
-  });
-  s.updatedAt=nowIso();
-  save(K.snapshots,snaps);
-  editorDirty=false;
-  renderSnaps();renderArc();renderWeek();
-}
-
-$('editSave').onclick=()=>{commitEditorSave();closeModal('editModal')};
 
 function tryCloseEditor(){
   if(!editorDirty){closeModal('editModal');return}
@@ -1014,22 +1055,24 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape' && document.getElementById('editModal').classList.contains('open')){tryCloseEditor()}
 });
 
-$('dirtyDiscard').onclick=()=>{editorDirty=false;closeModal('dirtyModal');closeModal('editModal')};
+$('dirtyDiscard').onclick=()=>{setDirty(false);closeModal('dirtyModal');closeModal('editModal')};
 $('dirtyCancel').onclick=()=>closeModal('dirtyModal');
 $('dirtySave').onclick=()=>{commitEditorSave();closeModal('dirtyModal');closeModal('editModal')};
 
 $('editDelete').onclick=()=>{
   confirmAction('Delete snapshot?','The whole thread (and all replies) will be permanently removed.',()=>{
     let snaps=load(K.snapshots,[]);snaps=snaps.filter(s=>s.id!==editingId);save(K.snapshots,snaps);
-    editorDirty=false;closeModal('editModal');renderSnaps();renderArc();renderWeek();
+    setDirty(false);closeModal('editModal');renderSnaps();renderArc();renderWeek();
   });
 };
 $('editArchive').onclick=()=>{
+  // Commit any pending edits first, then archive
+  commitEditorSave();
   const snaps=load(K.snapshots,[]);const s=snaps.find(x=>x.id===editingId);
   const to=!s.archived;
   confirmAction(to?'Archive thread?':'Unarchive thread?',to?'Moves to Archive tab.':'Restores to active Snapshots.',()=>{
     s.archived=to;s.updatedAt=nowIso();save(K.snapshots,snaps);
-    editorDirty=false;closeModal('editModal');renderSnaps();renderArc();
+    setDirty(false);closeModal('editModal');renderSnaps();renderArc();
   });
 };
 
@@ -1066,7 +1109,7 @@ function renderWeek(){
       <div class="dow">${dow}</div><h4>${day}</h4>
       ${engs.length?`<div class="wk-sec">Engaged</div>${engs.map(b=>`<span class="chip" title="${b}">${b.split('-').slice(-1)[0]}</span>`).join('')}`:''}
       ${ritDone.length?`<div class="wk-sec">Rituals</div>${ritDone.map(r=>`<span class="chip rit">${r.title}</span>`).join('')}`:''}
-      ${daySnaps.length?`<div class="wk-sec">Snapshots</div>${daySnaps.map(s=>`<span class="chip snap" data-snap-edit="${s.id}">${(s.focus||'(snap)').slice(0,32)}</span>`).join('')}`:''}
+      ${daySnaps.length?`<div class="wk-sec">Snapshots</div>${daySnaps.map(s=>`<span class="chip snap" data-snap-edit="${s.id}" title="Created ${fmtDT(s.createdAt)}${s.updatedAt&&s.updatedAt!==s.createdAt?' · edited '+fmtDT(s.updatedAt):''}">${(s.focus||'(snap)').slice(0,32)}</span>`).join('')}`:''}
     </div>`;
   }).join('');
 
